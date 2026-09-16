@@ -212,10 +212,12 @@ export default function ResearcherPickerModal({
                             <p className="text-xs font-medium">Memuat data direktori peneliti...</p>
                         </div>
                     ) : researchers.length === 0 ? (
-                        <div className="text-center py-16 space-y-3">
-                            <div className="w-14 h-14 mx-auto rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
-                                <GraduationCap className="w-7 h-7" />
-                            </div>
+                        <div className="text-center py-12 space-y-3">
+                            <img
+                                src="/assets/img/icon/notfound.png"
+                                alt="Tidak Ada Peneliti Ditemukan"
+                                className="w-24 sm:w-28 h-auto object-contain mx-auto mb-1 drop-shadow-xs"
+                            />
                             <div className="space-y-1">
                                 <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200">
                                     Tidak Ada Peneliti Ditemukan

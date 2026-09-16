@@ -1,4 +1,4 @@
-# STASIKATOR — STAS-RG Research & Innovation Deliverables Generator
+# STAS RG Projects — STAS-RG Research & Innovation Deliverables Generator
 
 <p align="center">
   <img src="public/assets/img/stas.png" height="75" alt="STAS RG Logo" />
@@ -54,7 +54,7 @@ Untuk panduan mendalam dan spesifikasi spesifik, silakan merujuk pada direktori 
 
 ## 🌟 Tentang Platform
 
-**STASIKATOR** (*STAS-RG Inovasi & Katalog Generator*) adalah platform web terpadu yang dirancang untuk mendigitalkan, menstandarisasi, dan mengotomasi seluruh materi publikasi luaran riset pada **Center of Excellence for Smart Telecom, Aerospace & Security Research Group (CoE STAS-RG)** Telkom University.
+**STAS RG Projects** adalah platform web terpadu yang dirancang untuk mendigitalkan, menstandarisasi, dan mengotomasi seluruh materi publikasi luaran riset pada **Center of Excellence for Smart Telecom, Aerospace & Security Research Group (CoE STAS-RG)** Telkom University.
 
 Dengan platform ini, para peneliti dan administrator laboratorium tidak perlu mendesain manual lembar publikasi dari nol. Sistem secara otomatis menyusun tata letak presisi tinggi, mengenerate **QR Code interaktif**, menyediakan **asistensi konten kecerdasan buatan (AI)**, mengelola data **hak paten / HKI**, dan menghasilkan dokumen **siap cetak (A4 Flyer, Brosur Lipat Tiga, Factsheet)** serta halaman **Showcase Publik**.
 
@@ -111,7 +111,7 @@ flowchart TD
         A --> E["Formulir Tiket Bantuan"]
     end
 
-    subgraph CoreEngine["STASIKATOR Core Engine"]
+    subgraph CoreEngine["STAS RG Projects Core Engine"]
         F["Inertia.js + React SPA"] --> G["Laravel 12 Application Layer"]
         G --> H[("Database & Cache Layer")]
         G --> I["Google Gemini / OpenAI Engine"]

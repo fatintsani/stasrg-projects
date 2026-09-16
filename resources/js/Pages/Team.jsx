@@ -71,8 +71,8 @@ function TeamContent() {
 
     return (
         <>
-            <Head title="Tim Pengembang & Peneliti — STASIKATOR CoE STAS-RG">
-                <meta name="description" content="Mengenal tim perancang, pengembang perangkat lunak, dan peneliti di balik platform STASIKATOR Center of Excellence STAS-RG Telkom University." />
+            <Head title="Tim Pengembang & Peneliti — STAS RG Projects CoE STAS-RG">
+                <meta name="description" content="Mengenal tim perancang, pengembang perangkat lunak, dan peneliti di balik platform STAS RG Projects Center of Excellence STAS-RG Telkom University." />
             </Head>
 
             <div className="min-h-screen flex flex-col bg-[#FAFBFD] dark:bg-[#070D18] text-slate-900 dark:text-slate-100 selection:bg-[#0AB600]/20 selection:text-[#0AB600] font-sans antialiased transition-colors">
@@ -92,13 +92,13 @@ function TeamContent() {
                             </div>
 
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                                {isId ? 'Di Balik Layar STASIKATOR' : 'Behind STASIKATOR'}
+                                {isId ? 'Di Balik Layar STAS RG Projects' : 'Behind STAS RG Projects'}
                             </h1>
 
                             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
                                 {isId 
-                                    ? 'Platform STASIKATOR dirancang dan dikembangkan secara berkesinambungan untuk memajukan standardisasi publikasi, otomasi penyusunan luaran riset, dan digitalisasi portofolio inovasi CoE STAS-RG Telkom University.'
-                                    : 'STASIKATOR is designed and developed to advance publication standardization, research deliverables automation, and innovation digitization for CoE STAS-RG Telkom University.'}
+                                    ? 'Platform STAS RG Projects dirancang dan dikembangkan secara berkesinambungan untuk memajukan standardisasi publikasi, otomasi penyusunan luaran riset, dan digitalisasi portofolio inovasi CoE STAS-RG Telkom University.'
+                                    : 'STAS RG Projects is designed and developed to advance publication standardization, research deliverables automation, and innovation digitization for CoE STAS-RG Telkom University.'}
                             </p>
                         </div>
 
@@ -138,8 +138,8 @@ function TeamContent() {
 
                                         <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-2xl">
                                             {isId
-                                                ? 'Merancang dan mengimplementasikan seluruh arsitektur sistem STASIKATOR — mulai dari engine layout presisi Flyer A4 & Brosur Lipat Tiga 3-panel, direktori master peneliti & HKI paten, sistem antrean email dua arah helpdesk, integrasi kecerdasan buatan Google Gemini & OpenAI bilingual, WebAuthn Passkeys biometrik, analitik interaksi QR expo, hingga pengerasan keamanan SVG XSS dan optimasi performa enterprise.'
-                                                : 'Architected and developed the complete STASIKATOR ecosystem — encompassing precision A4 Flyer & 3-panel Trifold Brochure layout engines, master researcher & patent HKI registry, asynchronous 2-way email ticketing helpdesk, Google Gemini & OpenAI bilingual AI relay, WebAuthn biometric passkeys, real-time QR expo analytics, deep SVG XSS sanitization, and enterprise database scaling.'}
+                                                ? 'Merancang dan mengimplementasikan seluruh arsitektur sistem STAS RG Projects — mulai dari engine layout presisi Flyer A4 & Brosur Lipat Tiga 3-panel, direktori master peneliti & HKI paten, sistem antrean email dua arah helpdesk, integrasi kecerdasan buatan Google Gemini & OpenAI bilingual, WebAuthn Passkeys biometrik, analitik interaksi QR expo, hingga pengerasan keamanan SVG XSS dan optimasi performa enterprise.'
+                                                : 'Architected and developed the complete STAS RG Projects ecosystem — encompassing precision A4 Flyer & 3-panel Trifold Brochure layout engines, master researcher & patent HKI registry, asynchronous 2-way email ticketing helpdesk, Google Gemini & OpenAI bilingual AI relay, WebAuthn biometric passkeys, real-time QR expo analytics, deep SVG XSS sanitization, and enterprise database scaling.'}
                                         </p>
 
                                         {/* Key Contributions Pills */}

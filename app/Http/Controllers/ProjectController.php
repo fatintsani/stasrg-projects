@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ProjectNotificationMail;
+use App\Models\ModelVersion;
 use App\Models\Project;
 use App\Models\ProjectTemplate;
 use App\Services\ActivityLogger;
 use App\Services\AiAssistantService;
 use App\Services\AnalyticsTracker;
 use App\Services\HtmlSanitizer;
+use App\Services\VersionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -274,6 +276,13 @@ class ProjectController extends Controller
                     $panelProjectData = $this->sanitizeProjectData($panelProjectData);
                     $newProj = $request->user()->projects()->create($panelProjectData);
                     $createdProjects[] = $newProj;
+
+                    app(VersionService::class)->recordVersion(
+                        model: $newProj,
+                        user: $request->user(),
+                        event: ModelVersion::EVENT_CREATED,
+                        summary: 'Versi awal proyek brosur lipat dibuat'
+                    );
                 }
 
                 return $createdProjects[0] ?? null;
@@ -297,6 +306,13 @@ class ProjectController extends Controller
         }
 
         $project = $request->user()->projects()->create($validated);
+
+        app(VersionService::class)->recordVersion(
+            model: $project,
+            user: $request->user(),
+            event: ModelVersion::EVENT_CREATED,
+            summary: 'Versi awal proyek berhasil dibuat'
+        );
 
         try {
             Mail::to($request->user()->email)->send(
@@ -605,6 +621,12 @@ class ProjectController extends Controller
         }
 
         $project->update($validated);
+
+        app(VersionService::class)->recordVersion(
+            model: $project,
+            user: $request->user(),
+            event: ModelVersion::EVENT_UPDATED
+        );
 
         try {
             $eventType = 'updated';
@@ -972,6 +994,140 @@ class ProjectController extends Controller
                 'message' => 'Konten proyek berhasil diterjemahkan ke Bahasa Inggris!',
                 'data' => $translated,
             ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * AI Assistant: Smart Form Assist Multi-Action Engine.
+     */
+    public function aiSmartAssist(Request $request): JsonResponse
+    {
+        $action = (string) $request->input('action', '');
+        $payload = $request->input('payload', []);
+        $context = $request->input('context', []);
+        $text = (string) ($request->input('text') ?: ($payload['text'] ?? ''));
+
+        try {
+            switch ($action) {
+                case 'executive_summary':
+                    $projectData = ! empty($payload) && is_array($payload) ? $payload : $context;
+                    $language = (string) $request->input('language', 'id');
+                    $result = AiAssistantService::generateExecutiveSummary($projectData, $language);
+
+                    ActivityLogger::logProject(
+                        action: 'project.ai_smart_assist',
+                        description: 'Menghasilkan Ringkasan Eksekutif proyek menggunakan AI Smart Assist',
+                        project: null,
+                        properties: ['action' => 'executive_summary', 'language' => $language],
+                        user: $request->user(),
+                        request: $request
+                    );
+
+                    return response()->json([
+                        'success' => true,
+                        'action' => 'executive_summary',
+                        'data' => $result,
+                    ]);
+
+                case 'format_abstract':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Silakan masukkan draf, catatan, atau rincian inovasi yang ingin disusun menjadi abstrak.',
+                        ], 422);
+                    }
+
+                    $targetLang = (string) $request->input('target_lang', 'both');
+                    $result = AiAssistantService::formatAcademicAbstract($text, $context, $targetLang);
+
+                    ActivityLogger::logProject(
+                        action: 'project.ai_smart_assist',
+                        description: 'Memformat draf catatan menjadi Abstrak Akademik IMRaD menggunakan AI Smart Assist',
+                        project: null,
+                        properties: ['action' => 'format_abstract'],
+                        user: $request->user(),
+                        request: $request
+                    );
+
+                    return response()->json([
+                        'success' => true,
+                        'action' => 'format_abstract',
+                        'data' => $result,
+                    ]);
+
+                case 'translate':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Silakan masukkan teks yang ingin diterjemahkan.',
+                        ], 422);
+                    }
+
+                    $fromLang = (string) $request->input('from_lang', 'id');
+                    $toLang = (string) $request->input('to_lang', 'en');
+                    $mode = (string) $request->input('mode', 'academic');
+
+                    $translatedText = AiAssistantService::translateBidirectional($text, $fromLang, $toLang, $mode);
+
+                    return response()->json([
+                        'success' => true,
+                        'action' => 'translate',
+                        'translated_text' => $translatedText,
+                        'from_lang' => $fromLang,
+                        'to_lang' => $toLang,
+                    ]);
+
+                case 'auto_summarize':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Silakan masukkan teks yang ingin diringkas.',
+                        ], 422);
+                    }
+
+                    $maxChars = (int) $request->input('max_chars', 350);
+                    $contentType = (string) $request->input('content_type', 'paragraph');
+
+                    $summarized = AiAssistantService::autoSummarizeToLimit($text, $maxChars, $contentType);
+
+                    return response()->json([
+                        'success' => true,
+                        'action' => 'auto_summarize',
+                        'summarized_text' => $summarized,
+                        'char_count' => mb_strlen(strip_tags($summarized)),
+                        'max_chars' => $maxChars,
+                    ]);
+
+                case 'polish_grammar':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Silakan masukkan teks yang ingin diperbaiki tata bahasanya.',
+                        ], 422);
+                    }
+
+                    $lang = (string) $request->input('language', 'id');
+                    $tone = (string) $request->input('tone', 'academic');
+
+                    $polished = AiAssistantService::polishGrammar($text, $lang, $tone);
+
+                    return response()->json([
+                        'success' => true,
+                        'action' => 'polish_grammar',
+                        'polished_text' => $polished,
+                    ]);
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Aksi AI Smart Assist tidak dikenali.',
+                    ], 422);
+            }
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,

@@ -21,7 +21,7 @@ class ErrorPagesTest extends TestCase
         Route::get('/test-error-503', fn () => abort(503, 'Service Unavailable'));
     }
 
-    public function test_404_not_found_renders_custom_stasikator_error_page(): void
+    public function test_404_not_found_renders_custom_error_page(): void
     {
         $response = $this->get('/non-existent-random-route-'.uniqid());
 

@@ -5,14 +5,14 @@
 
 @section('content')
     <h2 class="email-title">Pendaftar Akun Baru</h2>
-    <p class="email-subtitle">Ada pengguna baru yang baru saja mendaftar ke sistem STASIKATOR dan menunggu peninjauan.</p>
+    <p class="email-subtitle">Ada pengguna baru yang baru saja mendaftar ke sistem STAS RG Projects dan menunggu peninjauan.</p>
 
     <div class="greeting">
         Halo Tim Administrator STAS-RG,
     </div>
 
     <p class="paragraph">
-        Sistem mendeteksi adanya registrasi akun baru pada portal <strong>STASIKATOR</strong>. Berikut adalah rincian data pengguna yang baru terdaftar:
+        Sistem mendeteksi adanya registrasi akun baru pada portal <strong>STAS RG Projects</strong>. Berikut adalah rincian data pengguna yang baru terdaftar:
     </p>
 
     <!-- Info Card -->

@@ -1,12 +1,12 @@
-# STASIKATOR — Arsitektur Sistem & Spesifikasi Teknis
+# STAS RG Projects — Arsitektur Sistem & Spesifikasi Teknis
 
-Dokumen ini menjelaskan arsitektur perangkat lunak, skema basis data, alur data (*data flow*), pola desain, dan strategi penguatan keamanan sistem **STASIKATOR** (*Center of Excellence Sustainable Technology and Applied Sciences Research Group — Telkom University*).
+Dokumen ini menjelaskan arsitektur perangkat lunak, skema basis data, alur data (*data flow*), pola desain, dan strategi penguatan keamanan sistem **STAS RG Projects** (*Center of Excellence Sustainable Technology and Applied Sciences Research Group — Telkom University*).
 
 ---
 
 ## 1. Ikhtisar Arsitektur (High-Level Architecture)
 
-STASIKATOR mengadopsi pola arsitektur **Modern Monolith SPA** menggunakan stack **Laravel 12 + Inertia.js v3 + React 19 + Tailwind CSS v4**.
+STAS RG Projects mengadopsi pola arsitektur **Modern Monolith SPA** menggunakan stack **Laravel 12 + Inertia.js v3 + React 19 + Tailwind CSS v4**.
 
 ```mermaid
 graph TD

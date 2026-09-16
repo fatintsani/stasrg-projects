@@ -51,6 +51,12 @@ import {
     Lightbulb,
     Type,
     Headphones,
+    Download,
+    Archive,
+    FolderArchive,
+    FileArchive,
+    HardDriveDownload,
+    UploadCloud,
 } from 'lucide-react';
 
 function IndonesiaFlag({ className = "w-4 h-3" }) {
@@ -82,7 +88,7 @@ function EnglishFlag({ className = "w-4 h-3" }) {
     );
 }
 
-export default function Settings({ user, passkeys = [], projectStats = {}, systemInfo = {}, aiSettings = {}, appFont: initialAppFont = 'plus-jakarta-sans' }) {
+export default function Settings({ user, passkeys = [], projectStats = {}, systemInfo = {}, aiSettings = {}, backupSummary = {}, appFont: initialAppFont = 'plus-jakarta-sans' }) {
     const { theme, setTheme, language, setLanguage, appFont, setAppFont, t } = useApp();
     const s = t?.admin?.settings || {};
     const aiTrans = t?.aiSettings || {};
@@ -580,7 +586,7 @@ export default function Settings({ user, passkeys = [], projectStats = {}, syste
             if (saveRes.ok) {
                 showSuccess(
                     s.alertPasskeyRegisteredTitle || 'Passkey Berhasil Didaftarkan',
-                    s.alertPasskeyRegisteredMsg || 'Perangkat Anda telah terdaftar. Anda kini dapat login ke STASIKATOR secara instan menggunakan Touch ID, Face ID, atau Windows Hello.'
+                    s.alertPasskeyRegisteredMsg || 'Perangkat Anda telah terdaftar. Anda kini dapat login ke STAS RG Projects secara instan menggunakan Touch ID, Face ID, atau Windows Hello.'
                 );
                 router.reload({ only: ['passkeys', 'user'] });
             } else {
@@ -728,6 +734,117 @@ export default function Settings({ user, passkeys = [], projectStats = {}, syste
                 setIsOptimizing(false);
             }
         });
+    };
+
+    // Backup & Restore state
+    const [restoreFile, setRestoreFile] = useState(null);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+    const [downloadingBackupType, setDownloadingBackupType] = useState(null);
+    const restoreFileInputRef = useRef(null);
+
+    const formatBackupDate = (isoStr) => {
+        if (!isoStr) return language === 'en' ? 'Never' : 'Belum pernah';
+        try {
+            const d = new Date(isoStr);
+            return d.toLocaleString(language === 'en' ? 'en-US' : 'id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch {
+            return isoStr;
+        }
+    };
+
+    const handleDownloadBackup = (type) => {
+        setDownloadingBackupType(type);
+        showSuccess(
+            language === 'en' ? 'Preparing Download' : 'Menyiapkan Unduhan',
+            language === 'en' ? 'Snapshot file is being generated and downloaded...' : 'File snapshot sedang dibuat dan akan segera terunduh...'
+        );
+        window.location.href = `/settings/backup/${type}`;
+        setTimeout(() => {
+            setDownloadingBackupType(null);
+        }, 3500);
+    };
+
+    const handleSelectRestoreFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (!['sql', 'zip'].includes(ext)) {
+            showError(
+                language === 'en' ? 'Invalid File Format' : 'Format File Tidak Didukung',
+                language === 'en' ? 'Please select a .sql or .zip snapshot file.' : 'Harap pilih file snapshot berformat .sql atau .zip.'
+            );
+            return;
+        }
+
+        if (file.size > 200 * 1024 * 1024) {
+            showError(
+                language === 'en' ? 'File Too Large' : 'Ukuran File Terlalu Besar',
+                language === 'en' ? 'Maximum allowed backup file size is 200 MB.' : 'Ukuran file snapshot maksimal adalah 200 MB.'
+            );
+            return;
+        }
+
+        setRestoreFile(file);
+    };
+
+    const handlePerformRestore = () => {
+        if (!restoreFile) {
+            showWarning(
+                language === 'en' ? 'No File Selected' : 'File Belum Dipilih',
+                language === 'en' ? 'Please choose a snapshot file (.sql or .zip) to restore.' : 'Pilih file snapshot (.sql atau .zip) yang ingin dipulihkan.'
+            );
+            return;
+        }
+
+        showConfirm(
+            language === 'en' ? 'Confirm System Restore' : 'Konfirmasi Pemulihan Sistem (Restore)',
+            language === 'en' 
+                ? `Are you sure you want to restore "${restoreFile.name}"? This action will overwrite existing database records and replace matching media assets!`
+                : `Apakah Anda yakin ingin memulihkan sistem dari file "${restoreFile.name}"? Tindakan ini akan menimpa data database dan menggantikan aset media yang sesuai!`,
+            () => {
+                setIsRestoring(true);
+                const formData = new FormData();
+                formData.append('backup_file', restoreFile);
+
+                router.post('/settings/restore', formData, {
+                    forceFormData: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        showSuccess(
+                            language === 'en' ? 'Restore Completed' : 'Restorasi Berhasil',
+                            language === 'en' ? 'The system snapshot was restored successfully.' : 'Snapshot sistem berhasil dipulihkan dengan lancar.'
+                        );
+                        setRestoreFile(null);
+                        setShowRestoreModal(false);
+                        if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
+                        setIsRestoring(false);
+                    },
+                    onError: (err) => {
+                        showError(
+                            language === 'en' ? 'Restore Failed' : 'Gagal Memulihkan Snapshot',
+                            Object.values(err)[0] || (language === 'en' ? 'An error occurred during restore.' : 'Terjadi kesalahan saat memproses restorasi.')
+                        );
+                        setIsRestoring(false);
+                    },
+                    onFinish: () => {
+                        setIsRestoring(false);
+                    }
+                });
+            },
+            {
+                confirmText: language === 'en' ? 'Yes, Restore System' : 'Ya, Pulihkan Sistem',
+                cancelText: language === 'en' ? 'Cancel' : 'Batal',
+                type: 'danger'
+            }
+        );
     };
 
     const isMaintenanceActive = Boolean(systemInfo?.is_maintenance_mode);
@@ -1343,48 +1460,245 @@ export default function Settings({ user, passkeys = [], projectStats = {}, syste
 
                         </div>
 
-                        {/* Card: Kontak Support Developer */}
-                        <div className="bg-white dark:bg-[#121824] p-5 sm:p-6 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+                        {/* Section: Pusat Cadangan & Snapshot Sistem (Backup & Restore) */}
+                        <div className="bg-white dark:bg-[#121824] p-5 sm:p-6 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-5">
+                            
+                            {/* Card Header */}
+                            <div className="flex items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800/80">
                                 <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-xl bg-[#0AB600]/10 border border-[#0AB600]/30 text-[#0AB600]">
+                                        <HardDriveDownload className="w-5 h-5" />
+                                    </div>
                                     <div>
-                                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                                            Kontak Support Developer
+                                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <span>{language === 'en' ? 'System Backup & Snapshot Center' : 'Pusat Cadangan & Snapshot Sistem'}</span>
+                                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#0AB600] border border-emerald-500/20">
+                                                {language === 'en' ? 'Automated' : 'Otomatis'}
+                                            </span>
                                         </h3>
-                                        <p className="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
-                                            Bantuan teknis langsung, penanganan kendala server, atau konsultasi kustomisasi sistem.
+                                        <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
+                                            {language === 'en'
+                                                ? 'Download database snapshots, media assets archive, or restore system state safely.'
+                                                : 'Unduh snapshot database, arsip berkas media, atau pulihkan data sistem secara instan dan aman.'}
                                         </p>
                                     </div>
                                 </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRestoreModal(true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                                >
+                                    <UploadCloud className="w-3.5 h-3.5" />
+                                    <span>{language === 'en' ? 'Restore Snapshot' : 'Pulihkan Data'}</span>
+                                </button>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3.5">
+                            {/* Summary Metrics Chips */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                <div className="p-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800/60">
+                                    <p className="text-[10px] text-zinc-400">{language === 'en' ? 'Database Tables' : 'Tabel Database'}</p>
+                                    <p className="font-semibold text-slate-900 dark:text-white font-mono mt-0.5 flex items-center gap-1.5">
+                                        <Database className="w-3 h-3 text-blue-500" />
+                                        <span>{backupSummary?.tables_count || 16} Tabel</span>
+                                    </p>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800/60">
+                                    <p className="text-[10px] text-zinc-400">{language === 'en' ? 'Total Records' : 'Total Baris Data'}</p>
+                                    <p className="font-semibold text-slate-900 dark:text-white font-mono mt-0.5 flex items-center gap-1.5">
+                                        <Layers className="w-3 h-3 text-indigo-500" />
+                                        <span>{(backupSummary?.total_records || 0).toLocaleString('id-ID')} Baris</span>
+                                    </p>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800/60">
+                                    <p className="text-[10px] text-zinc-400">{language === 'en' ? 'Media Files' : 'Berkas Media'}</p>
+                                    <p className="font-semibold text-slate-900 dark:text-white font-mono mt-0.5 flex items-center gap-1.5">
+                                        <FolderArchive className="w-3 h-3 text-amber-500" />
+                                        <span>{backupSummary?.media_files_count || 0} File</span>
+                                    </p>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800/60">
+                                    <p className="text-[10px] text-zinc-400">{language === 'en' ? 'Storage Used' : 'Ukuran Media'}</p>
+                                    <p className="font-semibold text-[#0AB600] font-mono mt-0.5 flex items-center gap-1.5">
+                                        <HardDrive className="w-3 h-3 text-[#0AB600]" />
+                                        <span>{backupSummary?.media_size_formatted || '0 MB'}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* 3 Download Action Cards */}
+                            <div className="space-y-2">
+                                <h4 className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                                    {language === 'en' ? 'Download Backup Archive' : 'Pilihan Unduh Cadangan (Snapshot)'}
+                                </h4>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    
+                                    {/* 1. Database Snapshot */}
+                                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col justify-between gap-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                                                <Database className="w-4 h-4 text-blue-500" />
+                                                <span>Snapshot Database</span>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                                Ekspor data SQL seluruh tabel proyek riset, pengguna, template, log, dan preferensi sistem.
+                                            </p>
+                                            <div className="pt-1 text-[10px] text-zinc-400 flex items-center gap-1">
+                                                <span>Terakhir:</span>
+                                                <span className="font-medium text-slate-700 dark:text-zinc-300">
+                                                    {formatBackupDate(backupSummary?.last_database_backup)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownloadBackup('database')}
+                                            disabled={downloadingBackupType === 'database'}
+                                            className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
+                                        >
+                                            {downloadingBackupType === 'database' ? (
+                                                <>
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                                                    <span>{language === 'en' ? 'Exporting...' : 'Mengekspor...'}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Download className="w-3.5 h-3.5 text-blue-500" />
+                                                    <span>Unduh .SQL Dump</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* 2. Media Assets Archive */}
+                                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col justify-between gap-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                                                <FolderArchive className="w-4 h-4 text-amber-500" />
+                                                <span>Direktori Media Assets</span>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                                Arsip ZIP kompresi direktori media publik: foto proyek, flyer, logo mitra, dan foto profil.
+                                            </p>
+                                            <div className="pt-1 text-[10px] text-zinc-400 flex items-center gap-1">
+                                                <span>Terakhir:</span>
+                                                <span className="font-medium text-slate-700 dark:text-zinc-300">
+                                                    {formatBackupDate(backupSummary?.last_media_backup)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownloadBackup('media')}
+                                            disabled={downloadingBackupType === 'media'}
+                                            className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
+                                        >
+                                            {downloadingBackupType === 'media' ? (
+                                                <>
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                                                    <span>{language === 'en' ? 'Archiving...' : 'Mengompresi...'}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Download className="w-3.5 h-3.5 text-amber-500" />
+                                                    <span>Unduh .ZIP Media</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* 3. Full Bundle Snapshot */}
+                                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#0AB600]/5 to-emerald-500/10 dark:from-[#0AB600]/10 dark:to-emerald-950/30 border border-[#0AB600]/30 flex flex-col justify-between gap-3 hover:border-[#0AB600]/50 transition-all relative overflow-hidden">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                                                    <Archive className="w-4 h-4 text-[#0AB600]" />
+                                                    <span>Bundle Lengkap (All-in-One)</span>
+                                                </div>
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#0AB600] text-white">
+                                                    Rekomendasi
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                                Paket lengkap: Snapshot SQL + seluruh aset media + manifest metadata untuk migrasi penuh.
+                                            </p>
+                                            <div className="pt-1 text-[10px] text-zinc-400 flex items-center gap-1">
+                                                <span>Terakhir:</span>
+                                                <span className="font-medium text-slate-700 dark:text-zinc-300">
+                                                    {formatBackupDate(backupSummary?.last_full_backup)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownloadBackup('full')}
+                                            disabled={downloadingBackupType === 'full'}
+                                            className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold bg-[#0AB600] hover:bg-[#089600] text-white transition-all cursor-pointer shadow-xs disabled:opacity-50 active:scale-95"
+                                        >
+                                            {downloadingBackupType === 'full' ? (
+                                                <>
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                    <span>{language === 'en' ? 'Generating Bundle...' : 'Membuat Paket...'}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Download className="w-3.5 h-3.5" />
+                                                    <span>Unduh Paket .ZIP Lengkap</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Card: Kontak Support Developer (Main Brand Green Banner Style) */}
+                        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#0AB600] to-[#089600] text-white border border-[#0AB600]/40 relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-lg shadow-[#0AB600]/20">
+                            <div className="flex items-center gap-4 sm:gap-5 z-10 max-w-lg">
+                                <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
                                     <img
                                         src="/assets/img/icon/profile_dev.png"
-                                        alt="Developer Profile"
-                                        className="w-12 h-12 rounded-xl object-cover border border-[#0AB600]/30 shadow-xs shrink-0"
+                                        alt="Developer Assistant"
+                                        className="w-full h-full object-contain drop-shadow-md"
+                                        onError={(e) => {
+                                            e.currentTarget.src = 'https://github.com/fatintsani.png';
+                                        }}
                                     />
-                                    <div className="space-y-0.5">
-                                        <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
-                                            Nomor WhatsApp Developer:
-                                        </span>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2">
-                                            <span>+62 831-3397-7214</span>
-                                        </p>
+                                </div>
+                                <div>
+                                    <h3 className="text-base sm:text-lg font-extrabold tracking-tight text-white">
+                                        Kontak Support Developer
+                                    </h3>
+                                    <p className="text-xs text-white/90 mt-1 leading-relaxed">
+                                        Bantuan teknis langsung, penanganan kendala server, atau konsultasi kustomisasi sistem.
+                                    </p>
+                                    <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/20 text-white font-mono text-[11px] font-semibold">
+                                        <span>WA: +62 831-3397-7214</span>
                                     </div>
                                 </div>
-
-                                <a
-                                    href="https://wa.me/6283133977214?text=Halo%20Developer%20STAS%20RG%2C%20saya%20admin%20membutuhkan%20bantuan%20teknis%20sistem."
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#0AB600] hover:bg-[#099900] text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
-                                >
-                                    <Headphones className="w-3.5 h-3.5" />
-                                    <span>Hubungi via WhatsApp</span>
-                                </a>
                             </div>
+
+                            <a
+                                href="https://wa.me/6283133977214?text=Halo%20Developer%20STAS%20RG%2C%20saya%20admin%20membutuhkan%20bantuan%20teknis%20sistem."
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 py-2.5 px-5 rounded-xl bg-white hover:bg-zinc-100 text-[#0AB600] text-xs sm:text-sm font-bold transition-all shadow-md shrink-0 cursor-pointer z-10 self-start sm:self-center whitespace-nowrap active:scale-95"
+                            >
+                                <Headphones className="w-4 h-4 text-[#0AB600]" />
+                                <span>Hubungi via WhatsApp</span>
+                            </a>
+
+                            {/* Background Pattern Ambient Glow */}
+                            <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
                         </div>
 
                     </div>
@@ -1910,6 +2224,148 @@ export default function Settings({ user, passkeys = [], projectStats = {}, syste
                 </div>
 
             </div>
+
+            {/* Modal: Pulihkan Data dari Snapshot (Restore Modal) */}
+            {showRestoreModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-lg bg-white dark:bg-[#121824] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xl overflow-hidden p-6 space-y-5">
+                        
+                        {/* Modal Header */}
+                        <div className="flex items-start justify-between gap-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                    <UploadCloud className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                                        {language === 'en' ? 'Restore System Snapshot' : 'Pulihkan Data dari Snapshot'}
+                                    </h3>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                        {language === 'en'
+                                            ? 'Upload a .sql snapshot or .zip bundle to restore system data.'
+                                            : 'Unggah file snapshot .sql atau bundel .zip untuk memulihkan database & aset media.'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!isRestoring) {
+                                        setShowRestoreModal(false);
+                                        setRestoreFile(null);
+                                    }
+                                }}
+                                disabled={isRestoring}
+                                className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer disabled:opacity-50"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Dropzone File Selector */}
+                        <div className="space-y-3">
+                            <label className="text-xs font-semibold text-slate-900 dark:text-white block">
+                                {language === 'en' ? 'Select Snapshot File (.sql / .zip)' : 'Pilih File Snapshot (.sql / .zip)'}
+                            </label>
+
+                            <input
+                                ref={restoreFileInputRef}
+                                type="file"
+                                accept=".sql,.zip"
+                                onChange={handleSelectRestoreFile}
+                                className="hidden"
+                                id="backup-file-upload"
+                            />
+
+                            <label
+                                htmlFor="backup-file-upload"
+                                className={`w-full flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
+                                    restoreFile
+                                        ? 'border-[#0AB600] bg-[#0AB600]/5 dark:bg-[#0AB600]/10'
+                                        : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-900/30'
+                                }`}
+                            >
+                                {restoreFile ? (
+                                    <div className="flex flex-col items-center text-center space-y-2">
+                                        <div className="p-3 rounded-2xl bg-[#0AB600]/10 text-[#0AB600]">
+                                            <FileArchive className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white break-all">
+                                                {restoreFile.name}
+                                            </p>
+                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                                {(restoreFile.size / 1024 / 1024).toFixed(2)} MB &bull; {language === 'en' ? 'Click to change file' : 'Klik untuk ganti file'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center text-center space-y-2">
+                                        <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
+                                            <Upload className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                                                {language === 'en' ? 'Click or drag file here to upload' : 'Klik atau seret file ke sini'}
+                                            </p>
+                                            <p className="text-[11px] text-zinc-400 mt-0.5">
+                                                Mendukung file <span className="font-mono font-semibold">.sql</span> atau <span className="font-mono font-semibold">.zip</span> (Maks. 200 MB)
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </label>
+                        </div>
+
+                        {/* Safety Warning Notice */}
+                        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs space-y-1.5 leading-relaxed">
+                            <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                <span>{language === 'en' ? 'Attention Before Restoring:' : 'Perhatian Sebelum Melakukan Restorasi:'}</span>
+                            </div>
+                            <p className="text-[11px] pl-6 text-amber-900/90 dark:text-amber-300/90">
+                                Proses ini akan menggantikan data database dan berkas media saat ini sesuai isi snapshot yang diunggah. Pastikan Anda telah mengunduh snapshot cadangan terbaru sebelum melanjutkan.
+                            </p>
+                        </div>
+
+                        {/* Modal Action Buttons */}
+                        <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowRestoreModal(false);
+                                    setRestoreFile(null);
+                                }}
+                                disabled={isRestoring}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                                {language === 'en' ? 'Cancel' : 'Batal'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handlePerformRestore}
+                                disabled={!restoreFile || isRestoring}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0AB600] hover:bg-[#089600] text-white transition-all cursor-pointer shadow-md disabled:opacity-50 active:scale-95"
+                            >
+                                {isRestoring ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>{language === 'en' ? 'Restoring Snapshot...' : 'Memulihkan Snapshot...'}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UploadCloud className="w-4 h-4" />
+                                        <span>{language === 'en' ? 'Execute Restore' : 'Mulai Proses Restorasi'}</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }

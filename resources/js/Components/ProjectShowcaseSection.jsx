@@ -21,7 +21,7 @@ import { useApp } from '../Context/AppContext';
 import { stripHtml } from '../Utils/text';
 
 export default function ProjectShowcaseSection({ projects = [] }) {
-    const { t } = useApp();
+    const { t, language } = useApp();
     const showcaseT = t?.showcase || {};
 
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -287,6 +287,20 @@ export default function ProjectShowcaseSection({ projects = [] }) {
                             ))}
                         </AnimatePresence>
                     </motion.div>
+                )}
+
+                {/* Explore Full Interactive Catalog CTA */}
+                {projects.length > 0 && (
+                    <div className="mt-12 text-center">
+                        <Link
+                            href="/katalog"
+                            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-[#0AB600] hover:from-emerald-500 hover:to-[#089600] text-white text-xs sm:text-sm font-bold transition-all shadow-md hover:shadow-lg shadow-emerald-900/20 active:scale-98 group cursor-pointer"
+                        >
+                            <FolderKanban className="w-4 h-4 text-white" />
+                            <span>{language === 'en' ? 'Explore Complete Interactive Research Catalog' : 'Jelajahi Seluruh Katalog & Filter Riset'}</span>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </div>
                 )}
 
             </div>

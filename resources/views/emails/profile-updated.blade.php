@@ -1,11 +1,11 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Pembaruan Profil Akun')
-@section('header_subtitle', 'Notifikasi Pengaturan Akun STASIKATOR')
+@section('header_subtitle', 'Notifikasi Pengaturan Akun STAS RG Projects')
 
 @section('content')
     <h2 class="email-title">Profil Akun Telah Diperbarui</h2>
-    <p class="email-subtitle">Data profil atau foto avatar akun STASIKATOR Anda baru saja diperbarui.</p>
+    <p class="email-subtitle">Data profil atau foto avatar akun STAS RG Projects Anda baru saja diperbarui.</p>
 
     <div class="greeting">
         Halo {{ $user->name }},

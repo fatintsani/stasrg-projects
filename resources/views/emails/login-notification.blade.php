@@ -1,7 +1,7 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Notifikasi Masuk Akun')
-@section('header_subtitle', 'Laporan Keamanan Aktivitas Sesi STASIKATOR')
+@section('header_subtitle', 'Laporan Keamanan Aktivitas Sesi STAS RG Projects')
 
 @section('content')
     <h2 class="email-title">Aktivitas Masuk Akun Terdeteksi</h2>
@@ -12,7 +12,7 @@
     </div>
 
     <p class="paragraph">
-        Akun STASIKATOR Anda baru saja digunakan untuk masuk ke portal proyek riset STAS RG. Berikut adalah detail sesi akses:
+        Akun STAS RG Projects Anda baru saja digunakan untuk masuk ke portal proyek riset STAS RG. Berikut adalah detail sesi akses:
     </p>
 
     <!-- Info Card -->

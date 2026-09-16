@@ -161,46 +161,47 @@ export default function SupportTicketsIndex({ tickets = { data: [], links: [] },
 
             <div className="space-y-6 pb-12">
                 {/* Top Header Card */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#101622] p-5 sm:p-6 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm">
-                    <div className="flex items-center gap-3.5">
-                        <div className="p-2.5 rounded-xl bg-[#0AB600]/10 border border-[#0AB600]/30 flex items-center justify-center text-[#0AB600] shrink-0">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#101622] p-5 sm:p-6 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs">
+                    <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-[#0AB600]/10 border border-[#0AB600]/30 flex items-center justify-center text-[#0AB600] shrink-0 mt-0.5 sm:mt-0">
                             <LifeBuoy className="w-6 h-6" />
                         </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                                     Pusat Tiket Dukungan & Kontak
                                 </h1>
-                                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-mono font-bold bg-[#0AB600]/10 text-[#0AB600] border border-[#0AB600]/30">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#0AB600]/10 text-[#0AB600] border border-[#0AB600]/30 shrink-0">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#0AB600] animate-pulse" />
                                     {stats.total || 0} Tiket
                                 </span>
                             </div>
-                            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
                                 Pantau dan kelola aduan masalah, pertanyaan riset, dan permohonan kemitraan dari pengunjung landing page.
                             </p>
                         </div>
                     </div>
 
                     {/* Header Action Buttons */}
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
                         <a
                             href="https://wa.me/6283133977214?text=Halo%20Developer%20STAS%20RG%2C%20saya%20admin%20membutuhkan%20bantuan%20terkait%20tiket%20dukungan."
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#0AB600] bg-[#0AB600]/10 border border-[#0AB600]/30 hover:bg-[#0AB600]/20 shadow-2xs transition-all cursor-pointer"
+                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#0AB600] bg-[#0AB600]/10 hover:bg-[#0AB600]/20 border border-[#0AB600]/30 transition-all cursor-pointer whitespace-nowrap active:scale-95"
                             title="Hubungi Sekarang"
                         >
                             <img
                                 src="/assets/img/icon/profile_dev.png"
                                 alt="Developer Profile"
-                                className="w-5 h-5 rounded-md object-cover border border-[#0AB600]/40 shrink-0"
+                                className="w-4 h-4 rounded-md object-cover border border-[#0AB600]/40 shrink-0"
                             />
                             <span>Hubungi Sekarang</span>
                         </a>
 
                         <a
                             href="/support-tickets/export-csv"
-                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 shadow-sm transition-all cursor-pointer"
+                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80 hover:bg-zinc-50 dark:hover:bg-zinc-700/70 hover:border-zinc-300 transition-all cursor-pointer whitespace-nowrap active:scale-95"
                         >
                             <DownloadCloud className="w-4 h-4 text-[#0AB600]" />
                             <span>Ekspor CSV</span>

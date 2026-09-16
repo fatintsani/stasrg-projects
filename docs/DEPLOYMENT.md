@@ -1,4 +1,4 @@
-# STASIKATOR — Panduan Deployment & Operasional Produksi (Production Guide)
+# STAS RG Projects — Panduan Deployment & Operasional Produksi (Production Guide)
 
 Dokumen ini memandu proses instalasi, deployment ke server produksi (VPS / Dedicated Server / Cloud), konfigurasi Nginx, PHP-FPM, Supervisor Queue Worker, Crontab Scheduler, SSL, dan optimasi performa tingkat lanjut.
 
@@ -232,7 +232,7 @@ Buat skrip `deploy.sh` pada root direktori:
 #!/bin/bash
 set -e
 
-echo "🚀 Memulai Deployment STASIKATOR..."
+echo "🚀 Memulai Deployment STAS RG Projects..."
 
 # Masuk ke Maintenance Mode
 php artisan down --retry=60 || true

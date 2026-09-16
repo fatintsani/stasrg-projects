@@ -8,7 +8,7 @@
     <h1 class="error-title">Permintaan Tidak Valid</h1>
     
     <p class="error-description">
-        Format permintaan data atau parameter yang dikirimkan tidak dapat diproses oleh server sistem STASIKATOR.
+        Format permintaan data atau parameter yang dikirimkan tidak dapat diproses oleh server sistem STAS RG Projects.
     </p>
 
     <div class="actions-wrapper">

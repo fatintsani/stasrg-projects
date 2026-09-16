@@ -46,7 +46,7 @@ function NaraContent() {
             image: '/assets/img/icon/nara/n.png',
             word: 'Navigation',
             desc: isId 
-                ? 'Memandu penelusuran katalog inovasi, portofolio riset, dan arsitektur dokumen STASIKATOR.'
+                ? 'Memandu penelusuran katalog inovasi, portofolio riset, dan arsitektur dokumen STAS RG Projects.'
                 : 'Guiding discovery across innovation catalogs, research portfolios, and document architectures.',
         },
         {
@@ -137,7 +137,7 @@ function NaraContent() {
         {
             category: isId ? 'Brosur Lipat 3' : 'Trifold Brochure',
             mode: 'document',
-            query: isId ? 'Bagaimana susunan 3 panel pada Brosur Lipat Tiga STASIKATOR?' : 'How are the 3 panels organized in a STASIKATOR Trifold Brochure?'
+            query: isId ? 'Bagaimana susunan 3 panel pada Brosur Lipat Tiga STAS RG Projects?' : 'How are the 3 panels organized in a STAS RG Projects Trifold Brochure?'
         },
         {
             category: isId ? 'Kemitraan' : 'Collaboration',
@@ -262,11 +262,11 @@ function NaraContent() {
                                     className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0A121A] border border-zinc-200 dark:border-zinc-800 hover:border-[#0AB600]/50 transition-all flex flex-col justify-between group"
                                 >
                                     <div>
-                                        <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-3 flex items-center justify-start">
+                                        <div className="w-11 h-11 sm:w-12 sm:h-12 mb-3 p-1 rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-200/90 dark:border-zinc-700/80 shadow-xs flex items-center justify-center bg-white dark:bg-zinc-900">
                                             <img
                                                 src={item.image}
                                                 alt={`NARA - ${item.letter} (${item.word})`}
-                                                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                                                className="w-full h-full object-contain rounded-lg sm:rounded-xl group-hover:scale-105 transition-transform duration-200"
                                                 loading="lazy"
                                             />
                                         </div>
@@ -395,7 +395,7 @@ function NaraContent() {
                             </h3>
                             <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                                 {isId 
-                                    ? 'Jawaban didasarkan pada data proyek terbit, direktori peneliti, dan spesifikasi dokumen di platform STASIKATOR.'
+                                    ? 'Jawaban didasarkan pada data proyek terbit, direktori peneliti, dan spesifikasi dokumen di platform STAS RG Projects.'
                                     : 'Answers are grounded in published projects, researcher directories, and verified document specs.'}
                             </p>
                         </div>

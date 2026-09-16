@@ -1,7 +1,7 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Perubahan Status Aktivasi Akun')
-@section('header_subtitle', 'Notifikasi Keamanan & Akses Akun STASIKATOR')
+@section('header_subtitle', 'Notifikasi Keamanan & Akses Akun STAS RG Projects')
 
 @section('content')
     <h2 class="email-title">Pembaruan Status Akun</h2>
@@ -12,7 +12,7 @@
     </div>
 
     <p class="paragraph">
-        Kami menginformasikan bahwa status akun Anda di portal <strong>STASIKATOR</strong> telah diubah:
+        Kami menginformasikan bahwa status akun Anda di portal <strong>STAS RG Projects</strong> telah diubah:
     </p>
 
     <!-- Info Card -->

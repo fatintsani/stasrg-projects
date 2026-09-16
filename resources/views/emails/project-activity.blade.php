@@ -14,7 +14,7 @@
     ];
 
     $subtitles = [
-        'created' => 'Project spesifikasi riset baru telah berhasil didaftarkan ke sistem STASIKATOR.',
+        'created' => 'Project spesifikasi riset baru telah berhasil didaftarkan ke sistem STAS RG Projects.',
         'updated' => 'Perubahan data spesifikasi riset Anda telah tersimpan secara aman.',
         'published' => 'Project Anda kini tampil pada showcase publik Landing Page STAS-RG.',
         'unpublished' => 'Project telah diubah statusnya menjadi draft internal laboratorium.',
@@ -33,7 +33,7 @@
     };
 
     $headerTitle = $titles[$typeKey] ?? 'Pemberitahuan Aktivitas Project';
-    $headerSubtitle = $subtitles[$typeKey] ?? 'Pembaruan data pada sistem repositori STASIKATOR.';
+    $headerSubtitle = $subtitles[$typeKey] ?? 'Pembaruan data pada sistem repositori STAS RG Projects.';
 @endphp
 
 @section('title', $headerTitle)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Image, Check, Settings, Lightbulb, AlertTriangle, Layers, Columns, LayoutTemplate, FileText, BookOpen, Sparkles, Cpu, CheckCircle2, QrCode, AlignLeft, ShieldCheck, Zap, Terminal } from 'lucide-react';
+import { Image, Check, Settings, Lightbulb, AlertTriangle, Layers, Columns, LayoutTemplate, FileText, BookOpen, Sparkles, Cpu, CheckCircle2, QrCode, AlignLeft, ShieldCheck, Zap, Terminal, Building2, Award, User, Users } from 'lucide-react';
 import { getLayoutPreset, getDocumentFormat, getColorTheme, getPrintMode, getDesignStyle, getFlyerFont, getFlyerPattern } from '../../Utils/layoutPresets';
 import { SocialIcon, normalizeSocialLinks } from '../../Utils/socialPlatforms';
 
@@ -14,6 +14,16 @@ function tryParseJson(str) {
     } catch {
         return null;
     }
+}
+
+export function resolveMemberAvatar(member) {
+    if (!member) return null;
+    const url = member.avatar_preview || member.avatar;
+    if (!url || typeof url !== 'string') return null;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/')) {
+        return url;
+    }
+    return `/storage/${url}`;
 }
 
 export function resolvePartnerLogos(project) {
@@ -93,8 +103,12 @@ export function CustomBlockLayoutRenderer({
     description,
     mainImageUrl,
     presetConfig,
+    renderResearchMetadataAndTeam,
 }) {
     const blocks = (layoutSchema?.blocks || []).filter(b => b.visible !== false);
+    const imgPosX = layoutSchema?.image_x !== undefined ? Number(layoutSchema.image_x) : 50;
+    const imgPosY = layoutSchema?.image_y !== undefined ? Number(layoutSchema.image_y) : 50;
+    const imgObjPosition = `${imgPosX}% ${imgPosY}%`;
 
     const renderBlock = (block, idx) => {
         switch (block.type) {
@@ -128,7 +142,7 @@ export function CustomBlockLayoutRenderer({
                                                         style={{ height: '32px', display: 'inline-block', verticalAlign: 'middle', objectFit: 'contain' }}
                                                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                     />
-                                                    <div style={{ width: '1px', height: '18px', backgroundColor: isDark ? '#475569' : '#d1d5db', display: 'inline-block', margin: '0 2px' }} />
+                                                    <div style={{ width: '1px', height: '18px', backgroundColor: isDark ? '#475569' : '#cbd5e1', display: 'inline-block', margin: '0 2px' }} />
                                                 </React.Fragment>
                                             ))}
                                             <img 
@@ -205,6 +219,7 @@ export function CustomBlockLayoutRenderer({
                                     width: '100%',
                                     height: '100%',
                                     objectFit: 'cover',
+                                    objectPosition: imgObjPosition,
                                     borderRadius: '8px',
                                 }}
                             />
@@ -439,13 +454,18 @@ export function CustomBlockLayoutRenderer({
                     <div 
                         key={block.id || `footer_${idx}`}
                         style={{
-                            borderTop: `1px solid ${cardBorder}`,
-                            paddingTop: '8px',
                             marginTop: 'auto',
                             width: '100%',
                         }}
                     >
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        {renderResearchMetadataAndTeam && renderResearchMetadataAndTeam(true)}
+                        <div style={{
+                            borderTop: `1px solid ${cardBorder}`,
+                            paddingTop: '8px',
+                            marginTop: '4px',
+                            width: '100%',
+                        }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <tbody>
                                 <tr>
                                     <td style={{ verticalAlign: 'middle', width: '65%' }}>
@@ -494,6 +514,7 @@ export function CustomBlockLayoutRenderer({
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 );
 
@@ -583,6 +604,10 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
     const partnerLogoUrls = resolvePartnerLogos(project);
     const partnerLogoUrl = partnerLogoUrls[0] || null;
 
+    const labAffiliation = project.lab_affiliation || '';
+    const patentNumber = project.patent_number || '';
+    const publicationDoi = project.publication_doi || '';
+
     const rawTeam = project?.research_team;
     const researchTeam = Array.isArray(rawTeam)
         ? rawTeam.filter(m => m && (m.name || m.role))
@@ -611,6 +636,10 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
     const cardBg = isDark ? themeConfig.darkCardBg : '#f9fafb';
     const cardBorder = isDark ? '#1f293d' : '#e5e7eb';
 
+    const imgPosX = project?.layout_schema?.image_x !== undefined ? Number(project.layout_schema.image_x) : 50;
+    const imgPosY = project?.layout_schema?.image_y !== undefined ? Number(project.layout_schema.image_y) : 50;
+    const imgObjPosition = `${imgPosX}% ${imgPosY}%`;
+
     // Section title overrides based on language
     if (!benefitsData.title || benefitsData.title === 'MANFAAT' || benefitsData.title === 'KEY BENEFITS') {
         benefitsData.title = isEn ? 'KEY BENEFITS' : 'MANFAAT';
@@ -621,6 +650,117 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
     if (!psData.title || psData.title === 'PROBLEM–SOLUTION' || psData.title === 'PROBLEM & SOLUTION') {
         psData.title = isEn ? 'PROBLEM & SOLUTION' : 'PROBLEM–SOLUTION';
     }
+
+    const renderResearchMetadataAndTeam = (compact = false) => {
+        if (!labAffiliation && !patentNumber && !publicationDoi && researchTeam.length === 0) {
+            return null;
+        }
+
+        return (
+            <div style={{
+                marginTop: 'auto',
+                marginBottom: compact ? '4px' : '6px',
+                padding: compact ? '4px 6px' : '5px 8px',
+                borderRadius: designStyleId === 'minimal_grid' ? '0px' : '6px',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)',
+                border: `1px solid ${cardBorder}`,
+                width: '100%',
+                boxSizing: 'border-box',
+            }}>
+                {/* Row 1: Afiliasi Lab, Nomor HKI / Paten, Publikasi DOI */}
+                {(labAffiliation || patentNumber || publicationDoi) && (
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: compact ? '3px 8px' : '4px 12px',
+                        paddingBottom: researchTeam.length > 0 ? (compact ? '3px' : '4px') : '0',
+                        borderBottom: researchTeam.length > 0 ? `1px dashed ${cardBorder}` : 'none',
+                        marginBottom: researchTeam.length > 0 ? (compact ? '3px' : '4px') : '0',
+                    }}>
+                        {labAffiliation && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: compact ? '6pt' : '6.5pt', color: mutedColor }}>
+                                <Building2 style={{ width: '10px', height: '10px', color: primaryColor, flexShrink: 0 }} />
+                                <span><strong style={{ color: titleColor }}>Lab:</strong> {labAffiliation}</span>
+                            </div>
+                        )}
+                        {patentNumber && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: compact ? '6pt' : '6.5pt', color: mutedColor }}>
+                                <ShieldCheck style={{ width: '10px', height: '10px', color: primaryColor, flexShrink: 0 }} />
+                                <span><strong style={{ color: titleColor }}>HKI/Paten:</strong> {patentNumber}</span>
+                            </div>
+                        )}
+                        {publicationDoi && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: compact ? '6pt' : '6.5pt', color: mutedColor }}>
+                                <BookOpen style={{ width: '10px', height: '10px', color: primaryColor, flexShrink: 0 }} />
+                                <span><strong style={{ color: titleColor }}>DOI:</strong> {publicationDoi}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Row 2: Tim Peneliti dengan Foto Profil */}
+                {researchTeam.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '6px' : '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: compact ? '6pt' : '6.5pt', fontWeight: 800, color: titleColor, textTransform: 'uppercase', letterSpacing: '0.3px', flexShrink: 0 }}>
+                            {isEn ? 'Tim Peneliti:' : 'Tim Peneliti:'}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '4px' : '6px', flexWrap: 'wrap' }}>
+                            {researchTeam.map((member, mIdx) => {
+                                const avatarUrl = resolveMemberAvatar(member);
+                                const initials = member.name ? member.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'P';
+                                return (
+                                    <div key={mIdx} style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: compact ? '1.5px 4px' : '2px 6px',
+                                        borderRadius: designStyleId === 'minimal_grid' ? '0px' : '4px',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#ffffff',
+                                        border: `1px solid ${cardBorder}`,
+                                    }}>
+                                        {avatarUrl ? (
+                                            <img 
+                                                src={avatarUrl} 
+                                                alt={member.name} 
+                                                style={{
+                                                    width: compact ? '13px' : '16px',
+                                                    height: compact ? '13px' : '16px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: `1px solid ${primaryColor}`,
+                                                }}
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                width: compact ? '13px' : '16px',
+                                                height: compact ? '13px' : '16px',
+                                                borderRadius: '50%',
+                                                backgroundColor: `${primaryColor}22`,
+                                                color: primaryColor,
+                                                fontSize: compact ? '5pt' : '5.5pt',
+                                                fontWeight: 800,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}>
+                                                {initials}
+                                            </div>
+                                        )}
+                                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
+                                            <span style={{ fontSize: compact ? '6pt' : '6.5pt', fontWeight: 700, color: titleColor }}>{member.name}</span>
+                                            {member.role && <span style={{ fontSize: compact ? '4.5pt' : '5pt', color: mutedColor }}>{member.role}</span>}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div 
@@ -701,6 +841,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                     description={description}
                     mainImageUrl={mainImageUrl}
                     presetConfig={presetConfig}
+                    renderResearchMetadataAndTeam={renderResearchMetadataAndTeam}
                 />
             ) : (
                 <>
@@ -824,6 +965,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                                 width: '100%',
                                                 height: `${styles.imageHeight}px`,
                                                 objectFit: 'cover',
+                                                objectPosition: imgObjPosition,
                                                 borderRadius: '6px',
                                             }}
                                         />
@@ -1088,7 +1230,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                 boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 6px 20px rgba(0,0,0,0.06)',
                             }}>
                                 {mainImageUrl ? (
-                                    <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgObjPosition }} />
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#9ca3af' }}>
                                         <Image style={{ width: '32px', height: '32px', marginBottom: '4px' }} />
@@ -1229,7 +1371,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                     backgroundColor: isDark ? '#080d16' : '#ffffff',
                                 }}>
                                     {mainImageUrl ? (
-                                        <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgObjPosition }} />
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#9ca3af' }}>
                                             <Image style={{ width: '28px', height: '28px' }} />
@@ -1329,7 +1471,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                 backgroundColor: cardBg,
                             }}>
                                 {mainImageUrl ? (
-                                    <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgObjPosition }} />
                                 ) : (
                                     <div style={{ fontSize: '8.5pt', fontWeight: 700, color: mutedColor, letterSpacing: '0.5px' }}>
                                         [ FIGURE ARCHITECTURE ]
@@ -1460,7 +1602,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                         backgroundColor: cardBg,
                                     }}>
                                         {mainImageUrl ? (
-                                            <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgObjPosition }} />
                                         ) : (
                                             <div style={{ fontSize: '8pt', color: '#9ca3af' }}>Fig 1. Research Prototype</div>
                                         )}
@@ -1541,7 +1683,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                     backgroundColor: isDark ? '#050a12' : '#ffffff',
                                 }}>
                                     {mainImageUrl ? (
-                                        <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgObjPosition }} />
                                     ) : (
                                         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: mutedColor }}>
                                             <Cpu style={{ width: '32px', height: '32px', color: primaryColor, opacity: 0.6 }} />
@@ -1647,7 +1789,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                 backgroundColor: cardBg,
                             }}>
                                 {mainImageUrl ? (
-                                    <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={mainImageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgObjPosition }} />
                                 ) : (
                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: mutedColor }}>
                                         <Image style={{ width: '32px', height: '32px', opacity: 0.5 }} />
@@ -1701,8 +1843,11 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         </div>
                     )}
 
+                    {/* Research Metadata & Authorship Attribution (Di atas garis footer) */}
+                    {renderResearchMetadataAndTeam()}
+
                     {/* Universal Standard Footer for A4 */}
-                    <div style={{ marginTop: 'auto', borderTop: `1px solid ${cardBorder}`, paddingTop: '8px' }}>
+                    <div style={{ marginTop: '0px', borderTop: `1px solid ${cardBorder}`, paddingTop: '8px' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <tbody>
                                 <tr>
@@ -1724,23 +1869,6 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                                 </span>
                                             ))}
                                         </div>
-                                        {researchTeam.length > 0 && (
-                                            <div style={{ marginTop: '5px', paddingTop: '4px', borderTop: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                                <span style={{ fontSize: '7pt', fontWeight: 700, color: titleColor, textTransform: 'uppercase' }}>
-                                                    {isEn ? 'Research Team:' : 'Tim Peneliti:'}
-                                                </span>
-                                                {researchTeam.slice(0, 3).map((m, idx) => (
-                                                    <span key={idx} style={{ fontSize: '7pt', color: mutedColor, fontWeight: 500 }}>
-                                                        {m.name}{idx < Math.min(researchTeam.length, 3) - 1 ? ' •' : ''}
-                                                    </span>
-                                                ))}
-                                                {researchTeam.length > 3 && (
-                                                    <span style={{ fontSize: '6.5pt', color: primaryColor, fontWeight: 700 }}>
-                                                        +{researchTeam.length - 3} lainnya
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
                                     </td>
                                     <td style={{ verticalAlign: 'middle', width: '40%', textAlign: 'right' }}>
                                         <div style={{ display: 'inline-block', textAlign: 'right' }}>
@@ -1899,7 +2027,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         {/* Hero Prototype Image */}
                         <div className={`mt-5 w-full h-[360px] overflow-hidden flex items-center justify-center border relative ${designStyleId === 'modern_split' ? 'rounded-2xl shadow-md' : designStyleId === 'minimal_grid' ? 'rounded-none' : 'rounded-xl'}`} style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
                             {mainImageUrl ? (
-                                <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" />
+                                <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" style={{ objectPosition: imgObjPosition }} />
                             ) : (
                                 <div className="flex flex-col items-center text-zinc-400">
                                     <Image className="w-12 h-12 mb-2 opacity-50" />
@@ -1968,8 +2096,11 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         </div>
                     </div>
 
+                    {/* Research Metadata & Authorship Attribution (Di atas garis footer) */}
+                    {renderResearchMetadataAndTeam(true)}
+
                     {/* Eye-Level Banner Footer */}
-                    <div className="pt-4 border-t space-y-3" style={{ borderColor: cardBorder }}>
+                    <div className="pt-3 border-t space-y-3" style={{ borderColor: cardBorder }}>
                         <div className={`flex items-center justify-between p-3.5 bg-white dark:bg-zinc-900 border shadow-xs ${designStyleId === 'minimal_grid' ? 'rounded-none' : 'rounded-xl'}`} style={{ borderColor: cardBorder }}>
                             <div className="space-y-1">
                                 <div className="text-xs font-extrabold uppercase" style={{ color: primaryColor }}>
@@ -2073,7 +2204,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                             <div className="col-span-6 space-y-4">
                                 <div className={`w-full h-[220px] overflow-hidden border flex items-center justify-center relative ${designStyleId === 'modern_split' ? 'rounded-2xl shadow-md' : designStyleId === 'minimal_grid' ? 'rounded-none' : 'rounded-xl'}`} style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
                                     {mainImageUrl ? (
-                                        <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" />
+                                        <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" style={{ objectPosition: imgObjPosition }} />
                                     ) : (
                                         <div className="flex flex-col items-center text-zinc-400">
                                             <Image className="w-8 h-8 mb-1 opacity-50" />
@@ -2106,8 +2237,11 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         </div>
                     </div>
 
+                    {/* Research Metadata & Authorship Attribution (Di atas garis footer) */}
+                    {renderResearchMetadataAndTeam(true)}
+
                     {/* Factsheet Footer */}
-                    <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-[8pt]" style={{ borderColor: cardBorder, color: mutedColor }}>
+                    <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-2 text-[8pt]" style={{ borderColor: cardBorder, color: mutedColor }}>
                         <div className="flex flex-wrap items-center gap-3">
                             <span className="font-semibold" style={{ color: primaryColor }}>STAS-RG</span>
                             {socialLinks.map((item, idx) => (
@@ -2155,7 +2289,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                             </h1>
                             <div className={`w-full h-[230px] overflow-hidden border flex items-center justify-center ${designStyleId === 'modern_split' ? 'rounded-2xl shadow-md' : designStyleId === 'minimal_grid' ? 'rounded-none' : 'rounded-xl'}`} style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
                                 {mainImageUrl ? (
-                                    <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" />
+                                    <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" style={{ objectPosition: imgObjPosition }} />
                                 ) : (
                                     <div className="flex flex-col items-center text-zinc-400">
                                         <Image className="w-10 h-10 mb-1 opacity-50" />
@@ -2210,8 +2344,11 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         </div>
                     </div>
 
+                    {/* Research Metadata & Authorship Attribution (Di atas garis footer) */}
+                    {renderResearchMetadataAndTeam(true)}
+
                     {/* Widescreen Footer */}
-                    <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-3 text-[9pt]" style={{ borderColor: cardBorder, color: mutedColor }}>
+                    <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-3 text-[9pt]" style={{ borderColor: cardBorder, color: mutedColor }}>
                         <div className="flex flex-wrap items-center gap-4 font-medium">
                             {socialLinks.map((item, idx) => (
                                 <span key={idx} className="inline-flex items-center gap-1.5">
@@ -2265,7 +2402,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                     {/* Center Hero Image */}
                     <div className={`w-full h-[370px] overflow-hidden border flex items-center justify-center relative ${designStyleId === 'modern_split' ? 'rounded-3xl shadow-lg' : designStyleId === 'minimal_grid' ? 'rounded-none' : 'rounded-2xl'}`} style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
                         {mainImageUrl ? (
-                            <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" />
+                            <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" style={{ objectPosition: imgObjPosition }} />
                         ) : (
                             <div className="flex flex-col items-center text-zinc-400">
                                 <Image className="w-14 h-14 mb-2 opacity-50" />
@@ -2311,8 +2448,11 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         </div>
                     </div>
 
+                    {/* Research Metadata & Authorship Attribution (Di atas garis footer) */}
+                    {renderResearchMetadataAndTeam(true)}
+
                     {/* Bottom Feed Footer with Interactive QR Code */}
-                    <div className="pt-3 border-t flex items-center justify-between gap-4" style={{ borderColor: cardBorder }}>
+                    <div className="pt-2 border-t flex items-center justify-between gap-4" style={{ borderColor: cardBorder }}>
                         <div className="space-y-1">
                             <div className="text-xs font-black uppercase tracking-wider" style={{ color: primaryColor }}>
                                 Telkom University • CoE STAS-RG
@@ -2377,7 +2517,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                         {/* Tall Hero Prototype Image */}
                         <div className={`mt-6 w-full h-[520px] overflow-hidden border flex items-center justify-center relative ${designStyleId === 'modern_split' ? 'rounded-3xl shadow-xl' : designStyleId === 'minimal_grid' ? 'rounded-none' : 'rounded-3xl'}`} style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
                             {mainImageUrl ? (
-                                <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" />
+                                <img src={mainImageUrl} alt={title} className="w-full h-full object-cover" style={{ objectPosition: imgObjPosition }} />
                             ) : (
                                 <div className="flex flex-col items-center text-zinc-400">
                                     <Image className="w-16 h-16 mb-2 opacity-50" />
@@ -2443,6 +2583,9 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                             )}
                         </div>
                     </div>
+
+                    {/* Research Metadata & Team Profile */}
+                    {renderResearchMetadataAndTeam(true)}
 
                     {/* Story Bottom Interactive QR Bar */}
                     <div className="pt-5 border-t space-y-4" style={{ borderColor: cardBorder }}>
@@ -2531,13 +2674,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                             className={`flex flex-col justify-between ${paddingClasses} ${borderClasses} relative`}
                                             style={{ borderColor: isDark ? '#334155' : '#cbd5e1' }}
                                         >
-                                            <div className="flex items-center justify-between pb-1.5 border-b" style={{ borderColor: cardBorder }}>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                                                    <span className="text-[8.5px] font-extrabold tracking-wider uppercase text-zinc-400">
-                                                        Kotak {boxNum}
-                                                    </span>
-                                                </div>
+                                            <div className="flex items-center justify-end pb-1.5 border-b" style={{ borderColor: cardBorder }}>
                                                 <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                                                     {partnerLogoUrls.map((url, idx) => (
                                                         <React.Fragment key={idx}>
@@ -2554,10 +2691,10 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                                     <BookOpen className="w-5 h-5" />
                                                 </div>
                                                 <div className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">
-                                                    Kotak {boxNum} Belum Diisi
+                                                    Panel Inovasi Belum Diisi
                                                 </div>
                                                 <p className="text-[9.5px] text-zinc-400 max-w-[180px] leading-relaxed">
-                                                    Gunakan tombol tab Kotak {boxNum} pada formulir untuk mengisi inovasi ini.
+                                                    Gunakan tombol tab panel pada formulir untuk mengisi inovasi ini.
                                                 </p>
                                             </div>
 
@@ -2569,7 +2706,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                 }
 
                                 // Active Panel with Data
-                                const pTitle = panel.title || (isFirst ? title : `Inovasi Kotak ${boxNum}`);
+                                const pTitle = panel.title || (isFirst ? title : (project.name || ''));
                                 const pSubtitle = panel.subtitle || (isFirst ? subtitle : '');
                                 const pCategory = panel.category || project.category || 'CoE STAS-RG';
                                 const pDesc = panel.description || (isFirst ? description : '');
@@ -2590,13 +2727,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                     >
                                         <div className="space-y-2">
                                             {/* Panel Header */}
-                                            <div className="flex items-center justify-between pb-1.5 border-b" style={{ borderColor: cardBorder }}>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${isCurrentEditing ? 'animate-pulse' : ''}`} style={{ backgroundColor: primaryColor }} />
-                                                    <span className="text-[8.5px] font-extrabold tracking-wider uppercase" style={{ color: primaryColor }}>
-                                                        Kotak {boxNum}
-                                                    </span>
-                                                </div>
+                                            <div className="flex items-center justify-end pb-1.5 border-b" style={{ borderColor: cardBorder }}>
                                                 <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                                                     {partnerLogoUrls.map((url, idx) => (
                                                         <React.Fragment key={idx}>
@@ -2628,7 +2759,7 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                             {/* Image Photo Slot */}
                                             <div className="w-full h-[125px] rounded-xl overflow-hidden border flex items-center justify-center relative shadow-xs shrink-0" style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
                                                 {pImage ? (
-                                                    <img src={pImage} alt={pTitle} className="w-full h-full object-cover" />
+                                                    <img src={pImage} alt={pTitle} className="w-full h-full object-cover" style={{ objectPosition: `${panel.image_x ?? 50}% ${panel.image_y ?? 50}%` }} />
                                                 ) : (
                                                     <div className="flex flex-col items-center text-zinc-400 p-2 text-center">
                                                         <Image className="w-6 h-6 mb-0.5 opacity-50" />
@@ -2692,12 +2823,15 @@ export function A4Document({ project, isLive = false, id, previewLang = 'id' }) 
                                             )}
                                         </div>
 
+                                        {/* Research Metadata & Authorship Attribution */}
+                                        {renderResearchMetadataAndTeam(true)}
+
                                         {/* Panel Bottom QR & Footer */}
                                         <div className="pt-2 border-t space-y-1.5" style={{ borderColor: cardBorder }}>
                                             <div className="p-1.5 rounded-lg border flex items-center justify-between gap-1.5 shadow-2xs" style={{ backgroundColor: isDark ? '#121824' : '#ffffff', borderColor: cardBorder }}>
                                                 <div className="min-w-0 space-y-0.5">
                                                     <div className="text-[8.5px] font-black uppercase tracking-wider truncate" style={{ color: primaryColor }}>
-                                                        Pindai Riset #{boxNum}
+                                                        Pindai Riset
                                                     </div>
                                                     <div className="text-[7.5px] text-zinc-500 truncate font-mono">
                                                         {website}

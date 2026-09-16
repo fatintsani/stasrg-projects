@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     DOCUMENT_FORMATS,
     COLOR_THEMES,
@@ -33,6 +34,7 @@ import {
     Eye,
     Maximize2,
     Pipette,
+    ChevronDown,
 } from 'lucide-react';
 
 export default function LayoutPresetSelector({
@@ -59,6 +61,30 @@ export default function LayoutPresetSelector({
 }) {
     const [activeTab, setActiveTab] = useState('format'); // 'format' | 'style' | 'theme' | 'typography' | 'boilerplate' | 'blocks'
     const [appliedBoilerplateId, setAppliedBoilerplateId] = useState(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const tabs = [
+        { id: 'format', label: 'Format Dokumen', icon: FileText, desc: 'A4, Trifold, Banner, Feed' },
+        { id: 'style', label: 'Gaya Desain', icon: Sparkles, desc: 'Visual card, bold, minimalist' },
+        { id: 'theme', label: 'Tema Warna', icon: Palette, desc: 'Palet warna STAS & kustom' },
+        { id: 'typography', label: 'Font & Tekstur', icon: Type, desc: 'Tipografi font & motif latar' },
+        { id: 'boilerplate', label: 'Boilerplates', icon: BookmarkCheck, desc: 'Template draf siap pakai' },
+        ...(onSchemaChange ? [{ id: 'blocks', label: 'Blok Layout', icon: Layers, desc: 'Atur susunan blok flyer' }] : []),
+    ];
+
+    const currentTabItem = tabs.find((t) => t.id === activeTab) || tabs[0];
+    const CurrentTabIcon = currentTabItem.icon;
 
     const formatList = Object.values(DOCUMENT_FORMATS);
     const presetsList = Object.values(LAYOUT_PRESETS);
@@ -104,8 +130,8 @@ export default function LayoutPresetSelector({
 
     return (
         <div className="space-y-4 rounded-2xl bg-white dark:bg-[#121824] border border-zinc-200/80 dark:border-zinc-800 p-4 sm:p-5 shadow-xs">
-            {/* Header with Navigation Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            {/* Header with Dropdown Navigation */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-[#0AB600] shrink-0" />
@@ -118,82 +144,86 @@ export default function LayoutPresetSelector({
                     </p>
                 </div>
 
-                {/* Tab Pill Buttons (Rapi 3 Baris, 2 Kolom) */}
-                <div className="grid grid-cols-2 gap-1.5 bg-zinc-100/90 dark:bg-zinc-900/80 p-1.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 w-full sm:w-auto shrink-0 sm:min-w-[270px]">
+                {/* Modern Dropdown Navigation Menu */}
+                <div className="relative shrink-0 w-full sm:w-auto" ref={dropdownRef}>
                     <button
                         type="button"
-                        onClick={() => setActiveTab('format')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                            activeTab === 'format'
-                                ? 'bg-white dark:bg-zinc-800 text-[#0AB600] shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50'
-                        }`}
+                        onClick={() => setIsDropdownOpen((prev) => !prev)}
+                        className="w-full sm:w-auto min-w-[210px] px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 shadow-xs flex items-center justify-between gap-3 transition-all cursor-pointer group"
                     >
-                        <FileText className="w-3.5 h-3.5 shrink-0" />
-                        <span className="whitespace-nowrap">Format</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-[#0AB600]/10 text-[#0AB600] flex items-center justify-center shrink-0 group-hover:bg-[#0AB600] group-hover:text-white transition-colors">
+                                <CurrentTabIcon className="w-4 h-4" />
+                            </div>
+                            <div className="text-left min-w-0">
+                                <span className="block text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider leading-none">
+                                    Menu Kategori
+                                </span>
+                                <span className="block text-xs font-bold text-slate-800 dark:text-white truncate mt-0.5">
+                                    {currentTabItem.label}
+                                </span>
+                            </div>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-transform duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180 text-[#0AB600]' : ''}`} />
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('style')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                            activeTab === 'style'
-                                ? 'bg-white dark:bg-zinc-800 text-[#0AB600] shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50'
-                        }`}
-                    >
-                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                        <span className="whitespace-nowrap">Gaya Desain</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('theme')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                            activeTab === 'theme'
-                                ? 'bg-white dark:bg-zinc-800 text-[#0AB600] shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50'
-                        }`}
-                    >
-                        <Palette className="w-3.5 h-3.5 shrink-0" />
-                        <span className="whitespace-nowrap">Tema Warna</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('typography')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                            activeTab === 'typography'
-                                ? 'bg-white dark:bg-zinc-800 text-[#0AB600] shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50'
-                        }`}
-                    >
-                        <Type className="w-3.5 h-3.5 shrink-0" />
-                        <span className="whitespace-nowrap">Font &amp; Tekstur</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('boilerplate')}
-                        className={`${!onSchemaChange ? 'col-span-2' : ''} px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                            activeTab === 'boilerplate'
-                                ? 'bg-white dark:bg-zinc-800 text-[#0AB600] shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50'
-                        }`}
-                    >
-                        <BookmarkCheck className="w-3.5 h-3.5 shrink-0" />
-                        <span className="whitespace-nowrap">Boilerplates</span>
-                    </button>
-                    {onSchemaChange && (
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('blocks')}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                                activeTab === 'blocks'
-                                    ? 'bg-white dark:bg-zinc-800 text-[#0AB600] shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-800/50'
-                            }`}
-                        >
-                            <Layers className="w-3.5 h-3.5 shrink-0" />
-                            <span className="whitespace-nowrap">Blok Layout</span>
-                        </button>
-                    )}
+
+                    <AnimatePresence>
+                        {isDropdownOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                                transition={{ duration: 0.15, ease: 'easeOut' }}
+                                className="absolute right-0 top-full mt-2 w-full sm:w-72 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl p-1.5 backdrop-blur-md"
+                            >
+                                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                                    Pilih Pengaturan Styling
+                                </div>
+                                <div className="space-y-1">
+                                    {tabs.map((tab) => {
+                                        const TabIcon = tab.icon;
+                                        const isSelected = activeTab === tab.id;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setActiveTab(tab.id);
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? 'bg-[#0AB600]/10 text-[#0AB600] font-bold'
+                                                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                                                        isSelected
+                                                            ? 'bg-[#0AB600] text-white'
+                                                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
+                                                    }`}>
+                                                        <TabIcon className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className={`text-xs truncate ${isSelected ? 'font-bold text-[#0AB600]' : 'font-medium text-slate-800 dark:text-zinc-200'}`}>
+                                                            {tab.label}
+                                                        </p>
+                                                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                                                            {tab.desc}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {isSelected && (
+                                                    <Check className="w-4 h-4 text-[#0AB600] shrink-0" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 

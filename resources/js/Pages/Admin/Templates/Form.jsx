@@ -28,7 +28,9 @@ import {
     Maximize2,
     X,
     FolderKanban,
+    History,
 } from 'lucide-react';
+import VersionHistoryModal from '../../../Components/Admin/VersionHistoryModal';
 
 export default function Form({ template, categories = [] }) {
     const isEditing = Boolean(template?.id);
@@ -37,6 +39,7 @@ export default function Form({ template, categories = [] }) {
     const [previewZoom, setPreviewZoom] = useState(100);
     const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
     const [activeTrifoldTab, setActiveTrifoldTab] = useState(0);
+    const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
 
     const initialDefaultData = template?.default_data || {};
 
@@ -254,15 +257,29 @@ export default function Form({ template, categories = [] }) {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={processing}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0AB600] hover:bg-[#099600] text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer disabled:opacity-50"
-                    >
-                        <Save className="w-4 h-4" />
-                        <span>{processing ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan' : 'Simpan Template'}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {isEditing && (
+                            <button
+                                type="button"
+                                onClick={() => setIsVersionModalOpen(true)}
+                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-[#121824] border border-zinc-200/80 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                                title="Lihat Riwayat Versi & Snapshot Template"
+                            >
+                                <History className="w-4 h-4 text-[#0AB600]" />
+                                <span>Riwayat Versi</span>
+                            </button>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={processing}
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0AB600] hover:bg-[#099600] text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer disabled:opacity-50"
+                        >
+                            <Save className="w-4 h-4" />
+                            <span>{processing ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan' : 'Simpan Template'}</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Main 2-Column Split: Form (Left) & Live Canvas Preview (Right) */}
@@ -742,6 +759,20 @@ export default function Form({ template, categories = [] }) {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* Version History & Rollback Modal */}
+                {isEditing && (
+                    <VersionHistoryModal
+                        isOpen={isVersionModalOpen}
+                        onClose={() => setIsVersionModalOpen(false)}
+                        modelType="template"
+                        modelId={template?.slug || template?.id}
+                        modelName={template?.name}
+                        onRollbackSuccess={() => {
+                            router.reload();
+                        }}
+                    />
                 )}
             </div>
         </AdminLayout>

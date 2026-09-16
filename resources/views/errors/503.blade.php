@@ -8,7 +8,7 @@
     <h1 class="error-title">Layanan Sedang dalam Pemeliharaan</h1>
     
     <p class="error-description">
-        Sistem STASIKATOR saat ini sedang menjalani proses pemeliharaan rutin atau peningkatan infrastruktur server. Kami akan segera kembali aktif dalam beberapa saat.
+        Sistem STAS RG Projects saat ini sedang menjalani proses pemeliharaan rutin atau peningkatan infrastruktur server. Kami akan segera kembali aktif dalam beberapa saat.
     </p>
 
     <div class="actions-wrapper">

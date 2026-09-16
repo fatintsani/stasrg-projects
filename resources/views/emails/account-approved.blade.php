@@ -1,18 +1,18 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Akun Anda Telah Disetujui')
-@section('header_subtitle', 'Notifikasi Status Keanggotaan STASIKATOR')
+@section('header_subtitle', 'Notifikasi Status Keanggotaan STAS RG Projects')
 
 @section('content')
     <h2 class="email-title">Akun Berhasil Disetujui</h2>
-    <p class="email-subtitle">Selamat! Akses akun Anda di sistem STASIKATOR telah aktif sepenuhnya.</p>
+    <p class="email-subtitle">Selamat! Akses akun Anda di sistem STAS RG Projects telah aktif sepenuhnya.</p>
 
     <div class="greeting">
         Halo {{ $user->name }},
     </div>
 
     <p class="paragraph">
-        Kabar baik! Tim Administrator STAS-RG telah memverifikasi identitas Anda dan <strong>menyetujui permohonan akses akun Anda</strong> di portal STASIKATOR.
+        Kabar baik! Tim Administrator STAS-RG telah memverifikasi identitas Anda dan <strong>menyetujui permohonan akses akun Anda</strong> di portal STAS RG Projects.
     </p>
 
     <!-- Info Card -->
@@ -49,7 +49,7 @@
     <!-- Primary CTA -->
     <div class="button-wrapper">
         <a href="{{ $loginUrl ?? url('/login') }}" class="btn-primary" target="_blank">
-            Masuk ke Dashboard STASIKATOR
+            Masuk ke Dashboard STAS RG Projects
         </a>
     </div>
 

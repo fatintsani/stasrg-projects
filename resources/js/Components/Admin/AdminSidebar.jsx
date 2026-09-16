@@ -265,7 +265,7 @@ export default function AdminSidebar({
     const handleLogout = async () => {
         const confirmed = await showConfirm({
             title: 'Konfirmasi Keluar',
-            message: 'Apakah Anda yakin ingin mengakhiri sesi Admin STASIKATOR?',
+            message: 'Apakah Anda yakin ingin mengakhiri sesi Admin STAS RG Projects?',
             confirmText: 'Keluar Akun',
             cancelText: 'Batal',
             variant: 'danger',

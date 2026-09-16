@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ModelVersion;
 use App\Models\Project;
 use App\Models\ProjectTemplate;
 use App\Services\ActivityLogger;
 use App\Services\HtmlSanitizer;
+use App\Services\VersionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -168,6 +170,13 @@ class ProjectTemplateController extends Controller
             'is_system' => false,
         ]);
 
+        app(VersionService::class)->recordVersion(
+            model: $template,
+            user: Auth::user(),
+            event: ModelVersion::EVENT_CREATED,
+            summary: 'Versi awal template berhasil dibuat'
+        );
+
         ActivityLogger::log('create', 'template', "Membuat custom template baru: '{$template->name}'", $template);
 
         return redirect()->route('templates.index')
@@ -268,6 +277,12 @@ class ProjectTemplateController extends Controller
             'layout_schema' => $validated['layout_schema'] ?? $template->layout_schema,
         ]);
 
+        app(VersionService::class)->recordVersion(
+            model: $template,
+            user: Auth::user(),
+            event: ModelVersion::EVENT_UPDATED
+        );
+
         ActivityLogger::log('update', 'template', "Memperbarui template: '{$template->name}'", $template);
 
         return redirect()->route('templates.index')
@@ -315,6 +330,13 @@ class ProjectTemplateController extends Controller
             'is_system' => false,
             'usage_count' => 0,
         ]);
+
+        app(VersionService::class)->recordVersion(
+            model: $newTemplate,
+            user: Auth::user(),
+            event: ModelVersion::EVENT_CREATED,
+            summary: "Duplikasi dari template '{$template->name}'"
+        );
 
         ActivityLogger::log('duplicate', 'template', "Menduplikasi template '{$template->name}' menjadi '{$newTemplate->name}'", $newTemplate);
 
@@ -369,6 +391,13 @@ class ProjectTemplateController extends Controller
             'layout_schema' => $projectData['layout_schema'] ?? null,
             'is_system' => false,
         ]);
+
+        app(VersionService::class)->recordVersion(
+            model: $template,
+            user: Auth::user(),
+            event: ModelVersion::EVENT_CREATED,
+            summary: 'Disimpan dari proyek riset'
+        );
 
         ActivityLogger::log('create', 'template', "Menyimpan project sebagai custom template: '{$template->name}'", $template);
 

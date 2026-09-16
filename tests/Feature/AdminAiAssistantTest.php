@@ -108,4 +108,166 @@ class AdminAiAssistantTest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('success', $response->json('status'));
     }
+
+    public function test_admin_can_use_smart_assist_executive_summary(): void
+    {
+        \App\Models\SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        \App\Models\SystemSetting::set('ai_provider', 'gemini');
+        \App\Models\SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        $fakeResponse = [
+            'executive_summary' => 'Ringkasan eksekutif riset terpadu IoT cerdas.',
+            'strategic_highlights' => ['Efisiensi energi tinggi', 'Konektivitas LoRaWAN jarak jauh'],
+            'recommended_short_desc' => 'Sistem IoT pemantauan tanah real-time.',
+            'target_beneficiaries' => ['Kelompok Tani', 'Pemerintah Daerah'],
+        ];
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://generativelanguage.googleapis.com/*' => \Illuminate\Support\Facades\Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => json_encode($fakeResponse)],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $project = Project::factory()->create([
+            'title' => 'Sistem IoT Pertanian Cerdas',
+            'description' => 'Sistem pemantauan kelembapan tanah berbasis IoT dan LoRaWAN.',
+        ]);
+
+        $response = $this->actingAs($this->admin)->postJson('/ai-assistant/smart-assist', [
+            'action' => 'executive_summary',
+            'project_id' => $project->id,
+            'language' => 'id',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'status',
+            'result' => [
+                'executive_summary',
+                'strategic_highlights',
+                'recommended_short_desc',
+            ],
+        ]);
+        $this->assertEquals('success', $response->json('status'));
+    }
+
+    public function test_admin_can_use_smart_assist_format_abstract(): void
+    {
+        \App\Models\SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        \App\Models\SystemSetting::set('ai_provider', 'gemini');
+        \App\Models\SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        $fakeResponse = [
+            'abstract_id' => [
+                'background' => 'Latar belakang deteksi kebakaran dini.',
+                'methods' => 'Metode sensor nirkabel terdistribusi.',
+                'results' => 'Akurasi deteksi mencapai 98%.',
+                'conclusion' => 'Sistem terbukti andal.',
+                'full_paragraph' => 'Penelitian ini mengembangkan deteksi dini kebakaran menggunakan sensor nirkabel terdistribusi dengan akurasi 98%.',
+            ],
+            'abstract_en' => [
+                'background' => 'Background on early wildfire detection.',
+                'methods' => 'Distributed wireless sensor network methodology.',
+                'results' => 'Detection accuracy reached 98%.',
+                'conclusion' => 'The system demonstrated robust reliability.',
+                'full_paragraph' => 'This study presents an early wildfire detection system utilizing distributed wireless sensor networks with 98% accuracy.',
+            ],
+            'keywords_id' => ['Deteksi Dini', 'Kebakaran Hutan', 'Sensor Nirkabel'],
+            'keywords_en' => ['Early Detection', 'Wildfire', 'Wireless Sensors'],
+        ];
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://generativelanguage.googleapis.com/*' => \Illuminate\Support\Facades\Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => json_encode($fakeResponse)],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)->postJson('/ai-assistant/smart-assist', [
+            'action' => 'format_abstract',
+            'text' => 'Penelitian ini mengembangkan alat pendeteksi kebakaran hutan menggunakan sensor suhu dan transmisi data nirkabel.',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'status',
+            'result' => [
+                'abstract_id' => ['background', 'methods', 'results', 'conclusion', 'full_paragraph'],
+                'abstract_en' => ['background', 'methods', 'results', 'conclusion', 'full_paragraph'],
+                'keywords_id',
+                'keywords_en',
+            ],
+        ]);
+        $this->assertEquals('success', $response->json('status'));
+    }
+
+    public function test_admin_can_use_smart_assist_translation(): void
+    {
+        \App\Models\SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        \App\Models\SystemSetting::set('ai_provider', 'gemini');
+        \App\Models\SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://generativelanguage.googleapis.com/*' => \Illuminate\Support\Facades\Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => '<p>Intelligent control system for industrial robotics.</p>'],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)->postJson('/ai-assistant/smart-assist', [
+            'action' => 'translate',
+            'text' => 'Sistem kendali cerdas untuk robotika industri.',
+            'from_lang' => 'id',
+            'to_lang' => 'en',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'status',
+            'translated_text',
+            'from_lang',
+            'to_lang',
+        ]);
+        $this->assertEquals('success', $response->json('status'));
+    }
+
+    public function test_admin_can_use_smart_assist_auto_summarize(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson('/ai-assistant/smart-assist', [
+            'action' => 'auto_summarize',
+            'text' => 'Deskripsi panjang proyek riset yang memuat berbagai aspek teknis mengenai arsitektur perangkat keras dan integrasi sistem telekomunikasi berkecepatan tinggi.',
+            'max_chars' => 200,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'status',
+            'summary',
+            'char_count',
+            'max_chars',
+        ]);
+        $this->assertEquals('success', $response->json('status'));
+    }
 }

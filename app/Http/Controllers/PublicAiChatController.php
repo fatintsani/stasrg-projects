@@ -227,7 +227,7 @@ class PublicAiChatController extends Controller
             }
 
             // 3. DOCUMENT STANDARDIZATION LIMITS (A4 Flyer, Trifold, Factsheet)
-            $context .= "\n--- Standarisasi Dokumen STASIKATOR ---\n"
+            $context .= "\n--- Standarisasi Dokumen STAS RG Projects ---\n"
                 ."• Format Flyer A4 1-Halaman: Presisi tanpa overflow. Preset Balanced (Deskripsi: maks 400 char, Manfaat: 260 char, Spesifikasi: 260 char, Problem: 210 char, Solusi: 210 char). Preset Visual (gambar besar) & Text-Heavy (penjelasan detail).\n"
                 ."• Format Brosur Lipat Tiga (Trifold 3-Panel): Terdiri dari Cover Depan, Panel Solusi, Manfaat, Spesifikasi, dan Kontak Belakang.\n"
                 ."• Fitur Ekstra: Dynamic QR Code Expo, Login Biometrik Passkey (WebAuthn), Helpdesk Tiket Bantuan (/support).\n";

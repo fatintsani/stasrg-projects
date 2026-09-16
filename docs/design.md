@@ -1,6 +1,6 @@
-# STAS RG Projects (STASIKATOR) — Global Design System & Specification
+# STAS RG Projects — Global Design System & Specification
 
-Dokumentasi ini adalah **Single Source of Truth (SSOT)** standar visual, tata letak, tipografi, palet warna, aturan komponen, sistem notifikasi email, dan identitas visual **STAS-RG Projects (STASIKATOR)** berbasis **Contemporary Editorial & Modern Research Laboratory UI**.
+Dokumentasi ini adalah **Single Source of Truth (SSOT)** standar visual, tata letak, tipografi, palet warna, aturan komponen, sistem notifikasi email, dan identitas visual **STAS-RG Projects** berbasis **Contemporary Editorial & Modern Research Laboratory UI**.
 
 ---
 
@@ -70,7 +70,7 @@ Dokumentasi ini adalah **Single Source of Truth (SSOT)** standar visual, tata le
 
 ## 4. Email Design System & Master Template
 
-Email notifikasi merupakan bagian integral dari Design System STASIKATOR. Seluruh email wajib menginduk ke master template reusable (`resources/views/emails/layouts/master.blade.php`).
+Email notifikasi merupakan bagian integral dari Design System STAS RG Projects. Seluruh email wajib menginduk ke master template reusable (`resources/views/emails/layouts/master.blade.php`).
 
 ### 4.1. Master Email Layout Structure
 ```
@@ -115,7 +115,7 @@ Email notifikasi merupakan bagian integral dari Design System STASIKATOR. Seluru
 
 ## 5. Event-Driven Email Notification Matrix
 
-Sistem STASIKATOR mengintegrasikan notifikasi otomatis untuk seluruh lifecycle sistem:
+Sistem STAS RG Projects mengintegrasikan notifikasi otomatis untuk seluruh lifecycle sistem:
 
 ### 5.1. Authentication & Security
 1. **User Registered (`UserRegisteredMail`)**: Dikirim ke pengguna baru setelah mengisi form register bahwa akun telah tercatat dan menunggu persetujuan admin.
@@ -143,7 +143,7 @@ Sistem STASIKATOR mengintegrasikan notifikasi otomatis untuk seluruh lifecycle s
 
 ## 6. Custom Error Pages Specification
 
-Halaman error STASIKATOR didesain dengan pendekatan **Center-Focused Research Card** yang modern, informatif, dan tidak membocorkan informasi teknis/sensitif pada environment production.
+Halaman error STAS RG Projects didesain dengan pendekatan **Center-Focused Research Card** yang modern, informatif, dan tidak membocorkan informasi teknis/sensitif pada environment production.
 
 ### 6.1. Layout & Elemen Visual Error Page:
 - **Header**: Dual branding resmi STAS-RG dan Telkom University yang mengarah ke beranda (`/`).

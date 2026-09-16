@@ -475,10 +475,12 @@ export default function AdminNotificationDropdown() {
                                     <p className="text-xs">Memuat notifikasi...</p>
                                 </div>
                             ) : notifications.length === 0 ? (
-                                <div className="py-12 px-6 text-center space-y-2.5">
-                                    <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 flex items-center justify-center mx-auto text-zinc-400">
-                                        <Inbox className="w-6 h-6" />
-                                    </div>
+                                <div className="py-10 px-6 text-center space-y-2">
+                                    <img
+                                        src="/assets/img/icon/notfound.png"
+                                        alt="Tidak Ada Notifikasi"
+                                        className="w-16 sm:w-20 h-auto object-contain mx-auto mb-1 drop-shadow-xs"
+                                    />
                                     <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200">
                                         Tidak Ada Notifikasi
                                     </h4>

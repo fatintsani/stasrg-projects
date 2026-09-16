@@ -347,8 +347,8 @@ function DocsContent() {
 
     return (
         <>
-            <Head title="Dokumentasi Lengkap Platform — STASIKATOR CoE STAS-RG">
-                <meta name="description" content="Dokumentasi teknis dan panduan operasional STASIKATOR: format dokumen A4/Trifold, AI Engine, Master Peneliti & HKI, Helpdesk Email 2-Arah, dan Arsitektur Sistem." />
+            <Head title="Dokumentasi Lengkap Platform — STAS RG Projects CoE STAS-RG">
+                <meta name="description" content="Dokumentasi teknis dan panduan operasional STAS RG Projects: format dokumen A4/Trifold, AI Engine, Master Peneliti & HKI, Helpdesk Email 2-Arah, dan Arsitektur Sistem." />
             </Head>
 
             <div className="min-h-screen flex flex-col bg-[#FAFBFD] dark:bg-[#070D18] text-slate-900 dark:text-slate-100 selection:bg-[#0AB600]/20 selection:text-[#0AB600] font-sans antialiased transition-colors">
@@ -367,7 +367,7 @@ function DocsContent() {
                             </div>
 
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                                Dokumentasi STASIKATOR
+                                Dokumentasi STAS RG Projects
                             </h1>
 
                             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
@@ -462,7 +462,7 @@ function DocsContent() {
                                     {/* ═══════ 1. GETTING STARTED ═══════ */}
                                     <DocSection id="getting-started" icon={Zap} title="1. Memulai & Ikhtisar Platform" badge="OVERVIEW">
                                         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                            <strong>STASIKATOR</strong> (*STAS-RG Research & Innovation Deliverables Generator*) adalah sistem otomasi komprehensif pada <strong>Center of Excellence Sustainable Technology and Applied Sciences Research Group (CoE STAS-RG) Telkom University</strong>.
+                                            <strong>STAS RG Projects</strong> (*STAS-RG Research & Innovation Deliverables Generator*) adalah sistem otomasi komprehensif pada <strong>Center of Excellence Sustainable Technology and Applied Sciences Research Group (CoE STAS-RG) Telkom University</strong>.
                                         </p>
 
                                         <InfoCard icon={Workflow} title="Siklus Hidup Publikasi Riset" variant="accent">
@@ -793,7 +793,7 @@ GEMINI_DEFAULT_MODEL=gemini-3.6-flash`}
                                             />
                                             <FaqItem
                                                 question="Apakah pengiriman email memperlambat waktu respons aplikasi?"
-                                                answer="Tidak. Seluruh kelas pengiriman email di STASIKATOR mengimplementasikan antarmuka ShouldQueue, sehingga pengiriman dieksekusi di latar belakang oleh Queue Worker tanpa membebani browser pengguna."
+                                                answer="Tidak. Seluruh kelas pengiriman email di STAS RG Projects mengimplementasikan antarmuka ShouldQueue, sehingga pengiriman dieksekusi di latar belakang oleh Queue Worker tanpa membebani browser pengguna."
                                             />
                                             <FaqItem
                                                 question="Bagaimana cara mengaktifkan integrasi Google Gemini AI?"

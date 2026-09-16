@@ -350,6 +350,7 @@ function ProjectDetailContent({ project, relatedProjects = [] }) {
                                         src={mainImageUrl}
                                         alt={displayTitle}
                                         className="w-full h-full object-cover"
+                                        style={{ objectPosition: `${activePanel?.image_x ?? project?.layout_schema?.image_x ?? 50}% ${activePanel?.image_y ?? project?.layout_schema?.image_y ?? 50}%` }}
                                     />
                                     {/* Subtle gradient overlay at top for logo contrast */}
                                     <div className="absolute inset-x-0 top-0 h-16 sm:h-24 bg-gradient-to-b from-black/50 via-black/15 to-transparent pointer-events-none" />

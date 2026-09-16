@@ -41,7 +41,7 @@ function InstagramIcon({ className = "w-4 h-4" }) {
 }
 
 export default function Footer() {
-    const { t, openSupportModal } = useApp();
+    const { t, language, openSupportModal } = useApp();
 
     const socialLinks = [
         {
@@ -73,6 +73,7 @@ export default function Footer() {
 
     const simpleNavLinks = [
         { name: t.nav.overview, href: '/#overview' },
+        { name: language === 'en' ? 'Research Catalog' : 'Katalog Riset', href: '/katalog' },
         { name: 'NARA AI', href: '/nara' },
         { name: t.nav.about, href: '/#about' },
         { name: t.nav.principles, href: '/#principles' },

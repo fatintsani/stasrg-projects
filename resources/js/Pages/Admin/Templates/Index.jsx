@@ -30,7 +30,9 @@ import {
     ZoomIn,
     ZoomOut,
     Maximize2,
+    History,
 } from 'lucide-react';
+import VersionHistoryModal from '../../../Components/Admin/VersionHistoryModal';
 
 export default function Index({ templates = [], categories = [], filters = {} }) {
     const { t } = useApp();
@@ -40,6 +42,7 @@ export default function Index({ templates = [], categories = [], filters = {} })
     const [categoryFilter, setCategoryFilter] = useState(filters.category || 'all');
     const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
     const [previewModalTemplate, setPreviewModalTemplate] = useState(null);
+    const [versionModalTemplate, setVersionModalTemplate] = useState(null);
     const [previewZoom, setPreviewZoom] = useState(100);
 
     const applyFilters = (overrides = {}) => {
@@ -406,6 +409,15 @@ export default function Index({ templates = [], categories = [], filters = {} })
                                                 <Copy className="w-3.5 h-3.5" />
                                             </button>
 
+                                            <button
+                                                type="button"
+                                                onClick={() => setVersionModalTemplate(tpl)}
+                                                className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
+                                                title="Lihat Riwayat Versi Template"
+                                            >
+                                                <History className="w-3.5 h-3.5 text-[#0AB600]" />
+                                            </button>
+
                                             <Link
                                                 href={`/templates/${tpl.slug || tpl.id}/edit`}
                                                 className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
@@ -532,6 +544,21 @@ export default function Index({ templates = [], categories = [], filters = {} })
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Template Version History Modal */}
+            {versionModalTemplate && (
+                <VersionHistoryModal
+                    isOpen={Boolean(versionModalTemplate)}
+                    onClose={() => setVersionModalTemplate(null)}
+                    modelType="template"
+                    modelId={versionModalTemplate.slug || versionModalTemplate.id}
+                    modelName={versionModalTemplate.name}
+                    onRollbackSuccess={() => {
+                        setVersionModalTemplate(null);
+                        router.reload();
+                    }}
+                />
             )}
         </AdminLayout>
     );

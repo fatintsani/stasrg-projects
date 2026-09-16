@@ -1,18 +1,18 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Pemberitahuan Status Permohonan Akun')
-@section('header_subtitle', 'Notifikasi Peninjauan Akun STASIKATOR')
+@section('header_subtitle', 'Notifikasi Peninjauan Akun STAS RG Projects')
 
 @section('content')
     <h2 class="email-title">Status Permohonan Akun</h2>
-    <p class="email-subtitle">Pembaruan mengenai status pendaftaran akun Anda di sistem STASIKATOR.</p>
+    <p class="email-subtitle">Pembaruan mengenai status pendaftaran akun Anda di sistem STAS RG Projects.</p>
 
     <div class="greeting">
         Halo {{ $user->name }},
     </div>
 
     <p class="paragraph">
-        Terima kasih atas ketertarikan Anda untuk bergabung dengan platform manajemen proyek riset <strong>STASIKATOR</strong>.
+        Terima kasih atas ketertarikan Anda untuk bergabung dengan platform manajemen proyek riset <strong>STAS RG Projects</strong>.
     </p>
 
     <p class="paragraph">

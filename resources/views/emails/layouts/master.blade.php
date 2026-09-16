@@ -550,7 +550,7 @@
                                             </tr>
                                             <tr>
                                                 <td align="left" style="padding-top: 10px; font-size: 10.5px; color: #94A3B8; line-height: 1.5;">
-                                                    Email ini dikirimkan secara otomatis oleh sistem internal STASIKATOR / STAS RG Projects. Harap jangan membalas langsung ke email ini.
+                                                    Email ini dikirimkan secara otomatis oleh sistem internal STAS RG Projects. Harap jangan membalas langsung ke email ini.
                                                 </td>
                                             </tr>
                                             <tr>

@@ -460,9 +460,11 @@ export default function ResearchersIndex({
                 {/* Researcher Cards Grid */}
                 {researchers.data.length === 0 ? (
                     <div className="bg-white dark:bg-[#121824] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-12 text-center space-y-4 shadow-xs">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-[#0AB600]/10 text-[#0AB600] flex items-center justify-center">
-                            <GraduationCap className="w-8 h-8" />
-                        </div>
+                        <img
+                            src="/assets/img/icon/notfound.png"
+                            alt="Belum Ada Data Peneliti"
+                            className="w-28 sm:w-32 h-auto object-contain mx-auto mb-2 drop-shadow-xs"
+                        />
                         <div className="space-y-1">
                             <h3 className="text-base font-bold text-slate-900 dark:text-white">
                                 Belum Ada Data Peneliti
@@ -759,7 +761,7 @@ export default function ResearchersIndex({
                                         required
                                         value={createData.name}
                                         onChange={(e) => setCreateData({ ...createData, name: e.target.value })}
-                                        placeholder="Dr. Eng. Fulan, S.T., M.T."
+                                        placeholder="Masukkan nama lengkap beserta gelar"
                                         className="w-full px-3.5 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0AB600]/30 focus:border-[#0AB600]"
                                     />
                                 </div>
@@ -793,7 +795,7 @@ export default function ResearchersIndex({
                                         type="text"
                                         value={createData.identifier}
                                         onChange={(e) => setCreateData({ ...createData, identifier: e.target.value })}
-                                        placeholder="19850101... / 130120..."
+                                        placeholder="Masukkan NIM, NIP, atau NIDN"
                                         className="w-full px-3.5 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0AB600]/30 focus:border-[#0AB600]"
                                     />
                                 </div>
@@ -806,7 +808,7 @@ export default function ResearchersIndex({
                                         type="text"
                                         value={createData.lab_affiliation}
                                         onChange={(e) => setCreateData({ ...createData, lab_affiliation: e.target.value })}
-                                        placeholder="CoE STAS-RG / Telkom University"
+                                        placeholder="Masukkan afiliasi lab atau institusi"
                                         className="w-full px-3.5 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0AB600]/30 focus:border-[#0AB600]"
                                     />
                                 </div>
@@ -819,7 +821,7 @@ export default function ResearchersIndex({
                                         type="email"
                                         value={createData.email}
                                         onChange={(e) => setCreateData({ ...createData, email: e.target.value })}
-                                        placeholder="nama@telkomuniversity.ac.id"
+                                        placeholder="Masukkan alamat email institusi"
                                         className="w-full px-3.5 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0AB600]/30 focus:border-[#0AB600]"
                                     />
                                 </div>
@@ -835,7 +837,7 @@ export default function ResearchersIndex({
                                         type="text"
                                         value={createData.expertise}
                                         onChange={(e) => setCreateData({ ...createData, expertise: e.target.value })}
-                                        placeholder="contoh: Smart Agriculture, IoT Sensors, Computer Vision, AI"
+                                        placeholder="Masukkan bidang keahlian (pisahkan dengan koma)"
                                         className="w-full px-3.5 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0AB600]/30 focus:border-[#0AB600]"
                                     />
                                 </div>
@@ -856,7 +858,7 @@ export default function ResearchersIndex({
                                             type="url"
                                             value={createData.scholar_url}
                                             onChange={(e) => setCreateData({ ...createData, scholar_url: e.target.value })}
-                                            placeholder="https://scholar.google.com/citations?user=..."
+                                            placeholder="Masukkan URL Google Scholar"
                                             className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-1 focus:ring-[#0AB600] focus:border-[#0AB600]"
                                         />
                                     </div>
@@ -869,7 +871,7 @@ export default function ResearchersIndex({
                                             type="text"
                                             value={createData.scopus_url}
                                             onChange={(e) => setCreateData({ ...createData, scopus_url: e.target.value })}
-                                            placeholder="5720... atau URL Scopus"
+                                            placeholder="Masukkan Scopus Author ID atau URL"
                                             className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-1 focus:ring-[#0AB600] focus:border-[#0AB600]"
                                         />
                                     </div>
@@ -882,7 +884,7 @@ export default function ResearchersIndex({
                                             type="text"
                                             value={createData.sinta_url}
                                             onChange={(e) => setCreateData({ ...createData, sinta_url: e.target.value })}
-                                            placeholder="https://sinta.kemdikbud.go.id/authors/profile/..."
+                                            placeholder="Masukkan URL profil SINTA"
                                             className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-1 focus:ring-[#0AB600] focus:border-[#0AB600]"
                                         />
                                     </div>
@@ -895,7 +897,7 @@ export default function ResearchersIndex({
                                             type="text"
                                             value={createData.orcid_url}
                                             onChange={(e) => setCreateData({ ...createData, orcid_url: e.target.value })}
-                                            placeholder="https://orcid.org/0000-..."
+                                            placeholder="Masukkan URL ORCID"
                                             className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-1 focus:ring-[#0AB600] focus:border-[#0AB600]"
                                         />
                                     </div>
@@ -908,7 +910,7 @@ export default function ResearchersIndex({
                                             type="url"
                                             value={createData.linkedin_url}
                                             onChange={(e) => setCreateData({ ...createData, linkedin_url: e.target.value })}
-                                            placeholder="https://linkedin.com/in/username"
+                                            placeholder="Masukkan URL profil LinkedIn"
                                             className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:ring-1 focus:ring-[#0AB600] focus:border-[#0AB600]"
                                         />
                                     </div>

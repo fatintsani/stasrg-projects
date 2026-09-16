@@ -722,8 +722,280 @@ INSTRUCTION;
     }
 
     /**
-     * Send prompt to Gemini or OpenAI API and return text response.
+     * Generate comprehensive Executive Summary and Strategic Value Highlights from project data.
+     *
+     * @param  array<string, mixed>  $projectData
+     * @return array<string, mixed>
      */
+    public static function generateExecutiveSummary(array $projectData, string $language = 'id'): array
+    {
+        $provider = SystemSetting::get('ai_provider', 'gemini');
+        $model = SystemSetting::get('ai_model', 'gemini-3.6-flash');
+        $key = SystemSetting::get('ai_api_key');
+
+        if (empty($key)) {
+            throw new \RuntimeException('API Key AI belum dikonfigurasi. Silakan atur di menu Settings terlebih dahulu.');
+        }
+
+        $title = $projectData['title'] ?? ($projectData['name'] ?? 'Inovasi Riset');
+        $subtitle = $projectData['subtitle'] ?? '';
+        $category = $projectData['category'] ?? 'General';
+        $description = $projectData['description'] ?? '';
+        $problem = $projectData['problem_solution']['problem'] ?? ($projectData['problem'] ?? '');
+        $solution = $projectData['problem_solution']['solution'] ?? ($projectData['solution'] ?? '');
+        $benefits = $projectData['benefits']['content'] ?? ($projectData['benefits'] ?? '');
+        $specs = $projectData['specifications']['content'] ?? ($projectData['specifications'] ?? '');
+        $lab = $projectData['lab_affiliation'] ?? '';
+
+        $isId = strtolower($language) !== 'en';
+
+        $systemInstruction = $isId
+            ? <<<'INSTRUCTION'
+Anda adalah Executive Research Analyst senior untuk Center of Excellence Sustainable Technology and Applied Sciences Research Group (CoE STAS-RG) Telkom University.
+Tugas Anda adalah menyusun Ringkasan Eksekutif (Executive Summary) tingkat tinggi yang tajam, profesional, dan meyakinkan untuk pembuat kebijakan, industri mitra, dan reviewer pendanaan riset.
+
+Format output HARUS berupa JSON valid murni tanpa markdown codeblock pembungkus (tanpa ```json ... ```):
+{
+  "executive_summary": "1 paragraf padat 3-4 kalimat merangkum urgensi, solusi terapan, dan keunggulan teknologi.",
+  "strategic_highlights": [
+    "Poin keunggulan strategis 1",
+    "Poin keunggulan strategis 2",
+    "Poin keunggulan strategis 3"
+  ],
+  "recommended_short_desc": "Deskripsi ringkas 2 kalimat siap pakai untuk formulir proyek flyer A4 (maksimal 350 karakter).",
+  "target_beneficiaries": [
+    "Sektor / Industri Sasaran 1",
+    "Sektor / Industri Sasaran 2"
+  ]
+}
+Gunakan Bahasa Indonesia formal bisnis & akademik yang berwibawa.
+INSTRUCTION
+            : <<<'INSTRUCTION'
+You are a Senior Executive Research Analyst for the Center of Excellence Sustainable Technology and Applied Sciences Research Group (CoE STAS-RG) at Telkom University.
+Your task is to generate a high-impact Executive Summary and Strategic Value Analysis for policymakers, industry partners, and grant reviewers.
+
+Return ONLY pure, valid JSON with NO surrounding codeblocks (no ```json):
+{
+  "executive_summary": "1 strong paragraph (3-4 sentences) summarizing research urgency, applied solution, and competitive edge.",
+  "strategic_highlights": [
+    "Strategic highlight 1",
+    "Strategic highlight 2",
+    "Strategic highlight 3"
+  ],
+  "recommended_short_desc": "Concise 2-sentence description ready to be used in A4 flyer form (max 350 characters).",
+  "target_beneficiaries": [
+    "Target Industry / Beneficiary 1",
+    "Target Industry / Beneficiary 2"
+  ]
+}
+Use formal, commanding international business & academic English.
+INSTRUCTION;
+
+        $userPrompt = "Berikut data inovasi proyek riset:\n"
+            ."Judul: {$title}\n"
+            ."Subjudul: {$subtitle}\n"
+            ."Kategori: {$category}\n"
+            ."Afiliasi Lab: {$lab}\n"
+            ."Deskripsi Saat Ini: {$description}\n"
+            ."Problem: {$problem}\n"
+            ."Solution: {$solution}\n"
+            ."Manfaat: {$benefits}\n"
+            ."Spesifikasi: {$specs}\n\n"
+            .'Susun Ringkasan Eksekutif dan Strategic Highlights sekarang.';
+
+        $rawResponse = self::executePrompt($systemInstruction, $userPrompt, $key, $provider, $model);
+        $cleanJson = self::cleanJsonOutput($rawResponse);
+        $decoded = json_decode($cleanJson, true);
+
+        if (! is_array($decoded) || empty($decoded['executive_summary'])) {
+            return [
+                'executive_summary' => strip_tags($cleanJson),
+                'strategic_highlights' => ['Inovasi riset terapan berkelanjutan CoE STAS-RG.'],
+                'recommended_short_desc' => self::fitText(strip_tags($cleanJson), 350),
+                'target_beneficiaries' => ['Industri & Akademisi'],
+            ];
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Format raw user notes or rough draft into standard structured academic abstract (ID and/or EN) with keywords.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    public static function formatAcademicAbstract(string $rawText, array $context = [], string $targetLang = 'both'): array
+    {
+        $provider = SystemSetting::get('ai_provider', 'gemini');
+        $model = SystemSetting::get('ai_model', 'gemini-3.6-flash');
+        $key = SystemSetting::get('ai_api_key');
+
+        if (empty($key)) {
+            throw new \RuntimeException('API Key AI belum dikonfigurasi.');
+        }
+
+        $projectTitle = $context['title'] ?? ($context['name'] ?? 'Inovasi Riset STAS-RG');
+        $category = $context['category'] ?? 'Smart Agriculture';
+
+        $systemInstruction = <<<'INSTRUCTION'
+Anda adalah Editor Jurnal Ilmiah Internasional & Research Advisor CoE STAS-RG Telkom University.
+Tugas Anda adalah mengubah draf / catatan kasar dari pengguna menjadi Abstrak Ilmiah Terstruktur Standar (IMRaD: Background, Methods, Results, Conclusion) serta menghasilkan Kata Kunci (Keywords).
+
+Format output HARUS berupa JSON valid murni tanpa markdown codeblock pembungkus:
+{
+  "abstract_id": {
+    "background": "Latar belakang dan urgensi permasalahan riset...",
+    "methods": "Metodologi, perancangan sistem, dan arsitektur teknologi...",
+    "results": "Hasil pengujian utama, akurasi, atau efisiensi inovasi...",
+    "conclusion": "Kesimpulan dan dampak praktis penerapan...",
+    "full_paragraph": "Gabungan utuh 1 paragraf abstrak Bahasa Indonesia formal baku (150-250 kata)."
+  },
+  "abstract_en": {
+    "background": "Research background and urgency...",
+    "methods": "Methodology, system design, and technological architecture...",
+    "results": "Key empirical findings, accuracy, or efficiency metrics...",
+    "conclusion": "Conclusion and practical applied significance...",
+    "full_paragraph": "Complete 1-paragraph academic English abstract (150-250 words)."
+  },
+  "keywords_id": ["Kata Kunci 1", "Kata Kunci 2", "Kata Kunci 3", "Kata Kunci 4", "Kata Kunci 5"],
+  "keywords_en": ["Keyword 1", "Keyword 2", "Keyword 3", "Keyword 4", "Keyword 5"]
+}
+INSTRUCTION;
+
+        $userPrompt = "Konteks Proyek: {$projectTitle} (Kategori: {$category})\n\n"
+            ."Draf / Catatan / Informasi Riset Kasar dari Peneliti:\n\"{$rawText}\"\n\n"
+            .'Format menjadi Abstrak Ilmiah Terstruktur (ID & EN) beserta Keywords.';
+
+        $rawResponse = self::executePrompt($systemInstruction, $userPrompt, $key, $provider, $model);
+        $cleanJson = self::cleanJsonOutput($rawResponse);
+        $decoded = json_decode($cleanJson, true);
+
+        if (! is_array($decoded) || empty($decoded['abstract_id'])) {
+            $fallbackParagraph = strip_tags($cleanJson);
+
+            return [
+                'abstract_id' => [
+                    'background' => 'Urgensi inovasi teknologi terapan.',
+                    'methods' => 'Metodologi perancangan sistem terintegrasi.',
+                    'results' => 'Peningkatan efisiensi dan performa operasional.',
+                    'conclusion' => 'Solusi tepat guna untuk implementasi nyata.',
+                    'full_paragraph' => $fallbackParagraph,
+                ],
+                'abstract_en' => [
+                    'background' => 'Urgency of applied technological innovation.',
+                    'methods' => 'Integrated system design methodology.',
+                    'results' => 'Operational efficiency and performance enhancement.',
+                    'conclusion' => 'Actionable solution for real-world deployment.',
+                    'full_paragraph' => $fallbackParagraph,
+                ],
+                'keywords_id' => ['Teknologi Terapan', 'CoE STAS-RG', 'Inovasi', 'Telkom University'],
+                'keywords_en' => ['Applied Technology', 'CoE STAS-RG', 'Innovation', 'Telkom University'],
+            ];
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Bidirectional Translation between Indonesian and English (preserving HTML markup).
+     */
+    public static function translateBidirectional(string $text, string $sourceLang = 'id', string $targetLang = 'en', string $mode = 'academic'): string
+    {
+        $provider = SystemSetting::get('ai_provider', 'gemini');
+        $model = SystemSetting::get('ai_model', 'gemini-3.6-flash');
+        $key = SystemSetting::get('ai_api_key');
+
+        if (empty($key)) {
+            throw new \RuntimeException('API Key AI belum dikonfigurasi.');
+        }
+
+        $sourceName = strtolower($sourceLang) === 'en' ? 'English' : 'Indonesian (Bahasa Indonesia)';
+        $targetName = strtolower($targetLang) === 'id' ? 'Indonesian (Bahasa Indonesia)' : 'Academic English';
+
+        $systemInstruction = <<<INSTRUCTION
+You are an expert Scientific & Technical Translator for CoE STAS-RG Telkom University.
+Translate the given text from {$sourceName} to {$targetName}.
+
+RULES:
+1. Preserve all HTML formatting tags (<p>, <ul>, <li>, <strong>, <br>, <em>) exactly as structured.
+2. Use high-impact, standard scientific and technological terminology.
+3. Return ONLY the translated text / HTML string. Do NOT add preamble, markdown backticks, or notes.
+INSTRUCTION;
+
+        $userPrompt = "Text to translate:\n{$text}";
+
+        $rawResponse = self::executePrompt($systemInstruction, $userPrompt, $key, $provider, $model);
+
+        return self::cleanHtmlOutput($rawResponse);
+    }
+
+    /**
+     * Auto-summarize and fit text strictly within character limits without cutting words or sentences awkwardly.
+     */
+    public static function autoSummarizeToLimit(string $text, int $maxChars, string $contentType = 'paragraph'): string
+    {
+        $provider = SystemSetting::get('ai_provider', 'gemini');
+        $model = SystemSetting::get('ai_model', 'gemini-3.6-flash');
+        $key = SystemSetting::get('ai_api_key');
+
+        if (empty($key)) {
+            return self::fitParagraph($text, $maxChars, false);
+        }
+
+        $systemInstruction = <<<INSTRUCTION
+Anda adalah AI Summarization Engine khusus dokumen cetak 1 halaman A4 CoE STAS-RG Telkom University.
+Tugas Anda adalah meringkas teks berikut agar SANGAT PADAT, ELEGAN, dan TIDAK MELEBIHI {$maxChars} KARAKTER PLAIN TEXT.
+
+ATURAN:
+1. Teks hasil ringkasan HARUS memiliki total panjang maksimal {$maxChars} karakter.
+2. Pertahankan pesan inti, data penting, dan istilah kunci.
+3. Jika input berupa HTML (<p> atau <ul><li>), pertahankan tag tersebut.
+4. Kembalikan HANYA teks ringkasan tanpa penjelasan tambahan atau markdown codeblock pembungkus.
+INSTRUCTION;
+
+        $userPrompt = 'Teks asli (panjang saat ini: '.mb_strlen(strip_tags($text))." karakter):\n{$text}\n\nRingkas hingga maksimal {$maxChars} karakter:";
+
+        try {
+            $rawResponse = self::executePrompt($systemInstruction, $userPrompt, $key, $provider, $model);
+            $clean = self::cleanHtmlOutput($rawResponse);
+
+            if ($contentType === 'list') {
+                return self::fitList($clean, $maxChars);
+            }
+
+            return self::fitParagraph($clean, $maxChars, false);
+        } catch (\Throwable $e) {
+            return self::fitParagraph($text, $maxChars, false);
+        }
+    }
+
+    /**
+     * Polish and enhance grammar, clarity, and academic tone.
+     */
+    public static function polishGrammar(string $text, string $language = 'id', string $tone = 'academic'): string
+    {
+        $provider = SystemSetting::get('ai_provider', 'gemini');
+        $model = SystemSetting::get('ai_model', 'gemini-3.6-flash');
+        $key = SystemSetting::get('ai_api_key');
+
+        if (empty($key)) {
+            throw new \RuntimeException('API Key AI belum dikonfigurasi.');
+        }
+
+        $isId = strtolower($language) !== 'en';
+
+        $systemInstruction = $isId
+            ? 'Anda adalah Editor Ilmiah CoE STAS-RG Telkom University. Perbaiki tata bahasa, ejaan (EYD V), keterbacaan, dan tingkatkan tone teks berikut menjadi formal, presisi, dan elegan. Pertahankan tag HTML bila ada. Kembalikan HANYA hasil teks yang sudah diperbaiki.'
+            : 'You are an Academic Scientific Editor for CoE STAS-RG Telkom University. Enhance the grammar, flow, vocabulary, and scholarly tone of the following text. Preserve any HTML markup tags. Return ONLY the polished text.';
+
+        $userPrompt = "Teks untuk disempurnakan:\n{$text}";
+
+        $rawResponse = self::executePrompt($systemInstruction, $userPrompt, $key, $provider, $model);
+
+        return self::cleanHtmlOutput($rawResponse);
+    }
+
     /**
      * Send prompt to Gemini or OpenAI API and return text response.
      *
@@ -898,16 +1170,16 @@ INSTRUCTION;
         // Mode specific custom guidelines
         $modeGuidelinesId = match ($mode) {
             'research' => "MODE AKTIF: KONSULTASI RISET & IOT TERAPAN\n- Berikan analisis mendalam mengenai arsitektur sistem, pemilihan mikrokontroler/sensor, topologi komunikasi jaringan, serta metodologi penelitian terapan.\n- Rujuk proyek riset CoE STAS-RG yang relevan jika ada kecocokan topik.\n",
-            'document' => "MODE AKTIF: ANALISIS & STANDARISASI DOKUMEN\n- Bantu pengguna menyusun naskah Flyer A4 (1 halaman padat), Brosur Lipat Tiga (Trifold), atau Factsheet sesuai batasan karakter presisi STASIKATOR.\n- Berikan saran perbaikan teks agar lebih persuasif, ringkas, dan bebas kata bertele-tele.\n",
+            'document' => "MODE AKTIF: ANALISIS & STANDARISASI DOKUMEN\n- Bantu pengguna menyusun naskah Flyer A4 (1 halaman padat), Brosur Lipat Tiga (Trifold), atau Factsheet sesuai batasan karakter presisi STAS RG Projects.\n- Berikan saran perbaikan teks agar lebih persuasif, ringkas, dan bebas kata bertele-tele.\n",
             'partner' => "MODE AKTIF: KEMITRAAN & KOLABORASI INDUSTRI\n- Fokus bantu calon mitra industri, instansi pemerintah, dan akademisi memahami skema kerjasama riset, lisensi HKI/paten, pengujian laboratorium, dan pengajuan tiket kerjasama resmi via /support.\n",
-            default => "MODE AKTIF: ASISTEN UMUM & EKSPLORASI INOVASI\n- Jawab pertanyaan seputar profil CoE STAS-RG, direktori inovasi, peneliti, dan fitur platform STASIKATOR secara ramah dan menyeluruh.\n",
+            default => "MODE AKTIF: ASISTEN UMUM & EKSPLORASI INOVASI\n- Jawab pertanyaan seputar profil CoE STAS-RG, direktori inovasi, peneliti, dan fitur platform STAS RG Projects secara ramah dan menyeluruh.\n",
         };
 
         $modeGuidelinesEn = match ($mode) {
             'research' => "ACTIVE MODE: APPLIED RESEARCH & IOT CONSULTATION\n- Provide deep technical analysis on system architecture, sensors/MCU selection, telemetry protocols, and academic methodologies.\n- Reference published CoE STAS-RG research projects whenever relevant.\n",
-            'document' => "ACTIVE MODE: DOCUMENT ANALYSIS & STANDARDIZATION\n- Help user refine content for A4 Flyers, Trifold Brochures, or Factsheets conforming strictly to STASIKATOR 1-page character limits.\n- Provide crisp, punchy, and impactful copywriting suggestions.\n",
+            'document' => "ACTIVE MODE: DOCUMENT ANALYSIS & STANDARDIZATION\n- Help user refine content for A4 Flyers, Trifold Brochures, or Factsheets conforming strictly to STAS RG Projects 1-page character limits.\n- Provide crisp, punchy, and impactful copywriting suggestions.\n",
             'partner' => "ACTIVE MODE: INDUSTRY PARTNERSHIP & COLLABORATION\n- Guide potential industry partners and institutions on research collaboration schemes, IP/patent licensing, lab validation, and filing formal inquiries via /support.\n",
-            default => "ACTIVE MODE: GENERAL ASSISTANT & DISCOVERY\n- Assist visitors in discovering CoE STAS-RG innovations, research directories, faculties, and STASIKATOR platform capabilities.\n",
+            default => "ACTIVE MODE: GENERAL ASSISTANT & DISCOVERY\n- Assist visitors in discovering CoE STAS-RG innovations, research directories, faculties, and STAS RG Projects platform capabilities.\n",
         };
 
         $systemInstruction = $isId
@@ -921,7 +1193,7 @@ INSTRUCTION;
                 .$modeGuidelinesId
                 ."Tugas Utama NARA:\n"
                 ."1. Menjelaskan profil, bidang riset unggulan CoE STAS-RG (Smart Agriculture, IoT Sensing, Telekomunikasi & Antena, UAV/Aerospace, Cyber Security).\n"
-                ."2. Menginformasikan portofolio proyek riset, paten/HKI, peneliti, dan publikasi yang ada di platform STASIKATOR berdasarkan data konteks yang tersedia.\n"
+                ."2. Menginformasikan portofolio proyek riset, paten/HKI, peneliti, dan publikasi yang ada di platform STAS RG Projects berdasarkan data konteks yang tersedia.\n"
                 ."3. Memberikan panduan pembuatan dokumen ilmiah & expo (Flyer A4 1-Halaman, Brosur Lipat 3 Trifold, Factsheet, Dynamic QR Expo, Login Passkey WebAuthn).\n"
                 ."4. Analisis Multimodal Gambar & Dokumen: Jika pengguna melampirkan gambar (seperti logo instansi BRIN/Badan Riset dan Inovasi Nasional, Telkom University, diagram sistem IoT, foto mikrokontroler, prototipe, dokumen), analisalah gambar tersebut secara cermat, kenali objek/logo/teks di dalamnya, dan jawab pertanyaan pengguna dengan jelas dan akurat.\n\n"
                 ."Pedoman Format:\n"
@@ -938,7 +1210,7 @@ INSTRUCTION;
                 .$modeGuidelinesEn
                 ."Key Responsibilities:\n"
                 ."1. Explain CoE STAS-RG core research domains (Smart Agriculture, IoT Sensing, Telecommunications, UAV/Aerospace, Cyber Security).\n"
-                ."2. Provide accurate information about research projects, patents, researchers, and publications from STASIKATOR verified context.\n"
+                ."2. Provide accurate information about research projects, patents, researchers, and publications from STAS RG Projects verified context.\n"
                 ."3. Guide users on standardized scientific document generation (1-Page A4 Flyer, 3-Panel Trifold Brochure, Factsheet, Expo QR Codes, Passkey WebAuthn).\n"
                 ."4. Multimodal & Vision Analysis: When the user attaches an image (e.g. institutional logo like BRIN - National Research and Innovation Agency, Telkom University, IoT block diagrams, hardware prototypes, charts), inspect the image carefully, recognize the logo/text/content, and address the user's question directly and informatively.\n\n"
                 ."Formatting Guidelines:\n"
@@ -1027,9 +1299,9 @@ INSTRUCTION;
         }
 
         $systemInstruction = $isId
-            ? "Anda adalah 'NARA Admin Co-Pilot' (Navigation & Research Assistant), asisten AI khusus administrator internal untuk platform STASIKATOR CoE STAS-RG Telkom University.\n\n"
+            ? "Anda adalah 'NARA Admin Co-Pilot' (Navigation & Research Assistant), asisten AI khusus administrator internal untuk platform STAS RG Projects CoE STAS-RG Telkom University.\n\n"
                 ."HAK AKSES & OTORISASI KHUSUS ADMIN (FULL ACCESS):\n"
-                ."- Anda memiliki akses penuh terhadap data internal platform STASIKATOR (semua proyek publik/draf/arsip, statistik analitik, tiket bantuan, direktori peneliti, persetujuan user, log aktivitas, dan konfigurasi sistem).\n"
+                ."- Anda memiliki akses penuh terhadap data internal platform STAS RG Projects (semua proyek publik/draf/arsip, statistik analitik, tiket bantuan, direktori peneliti, persetujuan user, log aktivitas, dan konfigurasi sistem).\n"
                 ."- Berikan jawaban yang mendalam, taktis, berbasis data riil dari data yang dilampirkan dalam konteks di bawah.\n"
                 ."- Jika diminta meringkas atau menganalisis data proyek, tiket, atau peneliti, sajikan dalam format tabel Markdown, bullet point, atau metrik yang rapi dan mudah dieksekusi.\n"
                 ."- Anda dapat membantu administrator menyusun draft pengumuman, menganalisis beban helpdesk, mengecek konsistensi data paten/HKI, merekomendasikan tata letak (A4 Flyer / Trifold), hingga mereview berkas dan gambar teknis yang diunggah.\n\n"
@@ -1037,8 +1309,8 @@ INSTRUCTION;
                 ."- Selalu menyapa ramah dan profesional kepada {$adminName}.\n"
                 ."- Sebut diri Anda sebagai 'NARA'.\n"
                 ."- Berikan respon cepat, solutif, analitis, dan tepat sasaran.\n"
-                .($adminDataContext ? "\n=== DATA INTERNAL SISTEM STASIKATOR (LIVE DATABASE CONTEXT) ===\n{$adminDataContext}\n" : '')
-            : "You are 'NARA Admin Co-Pilot' (Navigation & Research Assistant), the dedicated internal intelligence assistant for administrators of STASIKATOR CoE STAS-RG Telkom University.\n\n"
+                .($adminDataContext ? "\n=== DATA INTERNAL SISTEM STAS RG PROJECTS (LIVE DATABASE CONTEXT) ===\n{$adminDataContext}\n" : '')
+            : "You are 'NARA Admin Co-Pilot' (Navigation & Research Assistant), the dedicated internal intelligence assistant for administrators of STAS RG Projects CoE STAS-RG Telkom University.\n\n"
                 ."SPECIAL PRIVILEGED ACCESS (FULL DATA CONTEXT):\n"
                 ."- You possess complete visibility into internal platform data (all published/draft/archived projects, system analytics, support tickets, researcher directories, user approvals, activity logs, and settings).\n"
                 ."- Provide actionable, precise, data-driven responses based on the live system context provided below.\n"

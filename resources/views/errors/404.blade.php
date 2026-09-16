@@ -8,7 +8,7 @@
 <h1 class="error-title">Halaman Tidak Ditemukan</h1>
 
 <p class="error-description">
-    Halaman atau dokumen spesifikasi riset yang Anda tuju tidak ditemukan pada sistem repositori STASIKATOR atau mungkin telah dipindahkan.
+    Halaman atau dokumen spesifikasi riset yang Anda tuju tidak ditemukan pada sistem repositori STAS RG Projects atau mungkin telah dipindahkan.
 </p>
 
 <div class="actions-wrapper">

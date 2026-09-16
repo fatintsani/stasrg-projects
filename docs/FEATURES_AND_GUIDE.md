@@ -1,6 +1,6 @@
-# STASIKATOR — Panduan Fitur & Penggunaan Lengkap
+# STAS RG Projects — Panduan Fitur & Penggunaan Lengkap
 
-Panduan ini mendokumentasikan seluruh modul fungsional, tata cara penggunaan, dan alur kerja (*workflows*) pada sistem **STASIKATOR**.
+Panduan ini mendokumentasikan seluruh modul fungsional, tata cara penggunaan, dan alur kerja (*workflows*) pada sistem **STAS RG Projects**.
 
 ---
 
@@ -31,7 +31,7 @@ Panduan ini mendokumentasikan seluruh modul fungsional, tata cara penggunaan, da
 
 ### 2. 🤖 Asistensi Kecerdasan Buatan (AI Content Assistant)
 
-STASIKATOR dilengkapi mesin AI fleksibel yang mendukung **Google Gemini Flash 3.6** dan **OpenAI GPT-4o**.
+STAS RG Projects dilengkapi mesin AI fleksibel yang mendukung **Google Gemini Flash 3.6** dan **OpenAI GPT-4o**.
 
 #### Fitur-Fitur AI:
 1. **Auto-Draft Complete Project**: Menghasilkan draf lengkap (latar belakang masalah, solusi inovasi, spesifikasi, dan manfaat) hanya dari judul atau konsep singkat.
@@ -92,7 +92,7 @@ Sistem tiket dua arah terintegrasi penuh untuk melayani pertanyaan pengunjung, c
 sequenceDiagram
     autonumber
     actor User as Pengunjung / Mitra
-    participant Web as Portal STASIKATOR
+    participant Web as Portal STAS RG Projects
     participant Queue as Asynchronous Queue
     actor Admin as Administrator Lab
     

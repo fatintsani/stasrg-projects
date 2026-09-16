@@ -109,7 +109,7 @@ function RegisterFormContent() {
                     {/* Full Name */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
-                            Nama Lengkap <span className="text-rose-500">*</span>
+                            {t.auth?.register?.fullNameLabel || 'Nama Lengkap'} <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
@@ -120,7 +120,7 @@ function RegisterFormContent() {
                                 required
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
-                                placeholder="cth. Budi Santoso"
+                                placeholder={t.auth?.register?.fullNamePlaceholder || 'Masukkan nama lengkap Anda'}
                                 className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/80 border ${
                                     errors.name ? 'border-rose-400 dark:border-rose-600' : 'border-zinc-200 dark:border-zinc-800'
                                 } text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-[#0AB600] dark:focus:border-[#0AB600] transition-colors`}
@@ -137,7 +137,7 @@ function RegisterFormContent() {
                     {/* Username */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
-                            Username Akun <span className="text-zinc-400 font-normal">(opsional)</span>
+                            {t.auth?.register?.usernameLabel || 'Username Akun'} <span className="text-zinc-400 font-normal">(opsional)</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
@@ -147,7 +147,7 @@ function RegisterFormContent() {
                                 type="text"
                                 value={data.username}
                                 onChange={(e) => setData('username', e.target.value)}
-                                placeholder="cth. budi_santoso"
+                                placeholder={t.auth?.register?.usernamePlaceholder || 'Masukkan username akun'}
                                 className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/80 border ${
                                     errors.username ? 'border-rose-400 dark:border-rose-600' : 'border-zinc-200 dark:border-zinc-800'
                                 } text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-[#0AB600] dark:focus:border-[#0AB600] transition-colors`}
@@ -164,7 +164,7 @@ function RegisterFormContent() {
                     {/* Email */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
-                            Alamat Email <span className="text-rose-500">*</span>
+                            {t.auth?.register?.emailLabel || 'Alamat Email'} <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
@@ -175,7 +175,7 @@ function RegisterFormContent() {
                                 required
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
-                                placeholder="nama@gmail.com atau email Anda"
+                                placeholder={t.auth?.register?.emailPlaceholder || 'Masukkan alamat email Anda'}
                                 className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/80 border ${
                                     errors.email ? 'border-rose-400 dark:border-rose-600' : 'border-zinc-200 dark:border-zinc-800'
                                 } text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-[#0AB600] dark:focus:border-[#0AB600] transition-colors`}
@@ -192,7 +192,7 @@ function RegisterFormContent() {
                     {/* Password Field */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
-                            Kata Sandi <span className="text-rose-500">*</span>
+                            {t.auth?.register?.passwordLabel || 'Kata Sandi'} <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
@@ -203,7 +203,7 @@ function RegisterFormContent() {
                                 required
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                placeholder="Minimal 8 karakter"
+                                placeholder={t.auth?.register?.passwordPlaceholder || 'Masukkan kata sandi (min. 8 karakter)'}
                                 className={`w-full pl-10 pr-10 py-2.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/80 border ${
                                     errors.password ? 'border-rose-400 dark:border-rose-600' : 'border-zinc-200 dark:border-zinc-800'
                                 } text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-[#0AB600] dark:focus:border-[#0AB600] transition-colors`}
@@ -228,7 +228,7 @@ function RegisterFormContent() {
                     {/* Confirm Password Field */}
                     <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
-                            Konfirmasi Kata Sandi <span className="text-rose-500">*</span>
+                            {t.auth?.register?.passwordConfirmLabel || 'Konfirmasi Kata Sandi'} <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
@@ -239,7 +239,7 @@ function RegisterFormContent() {
                                 required
                                 value={data.password_confirmation}
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
-                                placeholder="Ulangi kata sandi Anda"
+                                placeholder={t.auth?.register?.passwordConfirmPlaceholder || 'Masukkan ulang kata sandi Anda'}
                                 className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/80 border ${
                                     errors.password_confirmation ? 'border-rose-400 dark:border-rose-600' : 'border-zinc-200 dark:border-zinc-800'
                                 } text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-[#0AB600] dark:focus:border-[#0AB600] transition-colors`}

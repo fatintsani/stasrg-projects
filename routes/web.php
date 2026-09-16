@@ -11,9 +11,11 @@ use App\Http\Controllers\Auth\PasswordResetOtpController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MediaAssetController;
+use App\Http\Controllers\ModelVersionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectTemplateController;
 use App\Http\Controllers\PublicAiChatController;
+use App\Http\Controllers\PublicCatalogController;
 use App\Http\Controllers\ResearcherController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SupportTicketController;
@@ -93,6 +95,12 @@ Route::get('/', function () {
         'stats' => $data['stats'],
     ]);
 })->name('home');
+
+// Public Interactive Research Catalog & Explorer
+Route::get('/katalog', [PublicCatalogController::class, 'index'])->name('public.catalog');
+Route::get('/catalog', [PublicCatalogController::class, 'index']);
+Route::get('/showcase', [PublicCatalogController::class, 'index'])->name('public.showcase');
+Route::get('/jelajah', [PublicCatalogController::class, 'index']);
 
 // Public Project Detail Page for Published Projects
 Route::get('/showcase/{project:slug}', [ProjectController::class, 'publicShow'])->name('projects.showcase.show');
@@ -229,10 +237,15 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/ai-assistant/chat', [AdminAiAssistantController::class, 'chat'])
         ->middleware('throttle:60,1')
         ->name('admin.ai-assistant.chat');
+    Route::post('/ai-assistant/smart-assist', [AdminAiAssistantController::class, 'smartAssist'])
+        ->middleware('throttle:40,1')
+        ->name('admin.ai-assistant.smart-assist');
 
     // Project Management
     Route::resource('projects', ProjectController::class);
     Route::post('/projects/{project}/duplicate', [ProjectController::class, 'duplicate'])->name('projects.duplicate');
+    Route::get('/projects/{project}/versions', [ModelVersionController::class, 'projectVersions'])->name('projects.versions.index');
+    Route::post('/projects/{project}/versions/{version}/rollback', [ModelVersionController::class, 'projectRollback'])->name('projects.versions.rollback');
     Route::post('/projects/ai-generate', [ProjectController::class, 'aiGenerateProject'])
         ->middleware('throttle:20,1')
         ->name('projects.ai-generate');
@@ -242,10 +255,15 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/projects/ai-translate', [ProjectController::class, 'aiTranslateProject'])
         ->middleware('throttle:20,1')
         ->name('projects.ai-translate');
+    Route::post('/projects/ai-smart-assist', [ProjectController::class, 'aiSmartAssist'])
+        ->middleware('throttle:30,1')
+        ->name('projects.ai-smart-assist');
 
     // Project Template Management & Custom Template Builder
     Route::resource('templates', ProjectTemplateController::class);
     Route::post('/templates/{template}/duplicate', [ProjectTemplateController::class, 'duplicate'])->name('templates.duplicate');
+    Route::get('/templates/{template}/versions', [ModelVersionController::class, 'templateVersions'])->name('templates.versions.index');
+    Route::post('/templates/{template}/versions/{version}/rollback', [ModelVersionController::class, 'templateRollback'])->name('templates.versions.rollback');
     Route::post('/templates/save-from-project', [ProjectTemplateController::class, 'saveFromProject'])->name('templates.save-from-project');
     Route::get('/api/templates', [ProjectTemplateController::class, 'apiList'])->name('api.templates.index');
 
@@ -302,6 +320,12 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/settings/maintenance/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.maintenance.clear-cache');
     Route::post('/settings/maintenance/optimize', [SettingsController::class, 'optimizeSystem'])->name('settings.maintenance.optimize');
     Route::delete('/settings/avatar', [SettingsController::class, 'removeAvatar'])->name('settings.avatar.destroy');
+
+    // System Backup & Snapshot Center
+    Route::get('/settings/backup/database', [SettingsController::class, 'downloadDatabaseBackup'])->name('settings.backup.database');
+    Route::get('/settings/backup/media', [SettingsController::class, 'downloadMediaBackup'])->name('settings.backup.media');
+    Route::get('/settings/backup/full', [SettingsController::class, 'downloadFullBackup'])->name('settings.backup.full');
+    Route::post('/settings/restore', [SettingsController::class, 'restoreBackup'])->name('settings.restore');
 
     // Account & Passkey
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

@@ -88,7 +88,7 @@ export default function AdminHeader({
         setIsDropdownOpen(false);
         const confirmed = await showConfirm({
             title: 'Konfirmasi Keluar',
-            message: 'Apakah Anda yakin ingin mengakhiri sesi Admin STASIKATOR?',
+            message: 'Apakah Anda yakin ingin mengakhiri sesi Admin STAS RG Projects?',
             confirmText: 'Keluar Akun',
             cancelText: 'Batal',
             variant: 'danger',

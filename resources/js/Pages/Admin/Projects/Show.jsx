@@ -18,15 +18,18 @@ import {
     Loader2,
     Printer,
     Image as ImageIcon,
-    Eye
+    Eye,
+    History
 } from 'lucide-react';
 import { downloadFlyerAsPng, printFlyer } from '../../../Utils/flyerExport';
 import ExportSosmedModal from '../../../Components/Admin/ExportSosmedModal';
+import VersionHistoryModal from '../../../Components/Admin/VersionHistoryModal';
 
 export default function Show({ project }) {
     const { showConfirm } = useAlert();
     const [pngLoading, setPngLoading] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
     const [previewLang, setPreviewLang] = useState('id');
 
     if (!project) return null;
@@ -157,6 +160,16 @@ export default function Show({ project }) {
 
                             <button
                                 type="button"
+                                onClick={() => setIsVersionModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
+                                title="Lihat Riwayat Versi & Rollback"
+                            >
+                                <History className="w-3.5 h-3.5 text-[#0AB600]" />
+                                <span>Riwayat Versi</span>
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={handleDuplicate}
                                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
                             >
@@ -261,6 +274,18 @@ export default function Show({ project }) {
                     project={project}
                     isOpen={isExportModalOpen}
                     onClose={() => setIsExportModalOpen(false)}
+                />
+
+                {/* Version History & Rollback Modal */}
+                <VersionHistoryModal
+                    isOpen={isVersionModalOpen}
+                    onClose={() => setIsVersionModalOpen(false)}
+                    modelType="project"
+                    modelId={project.slug || project.id}
+                    modelName={project.name || project.title}
+                    onRollbackSuccess={() => {
+                        router.reload();
+                    }}
                 />
 
             </div>

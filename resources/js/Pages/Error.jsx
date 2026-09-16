@@ -10,7 +10,7 @@ export default function ErrorPage({ status = 404, message }) {
             badgeClass: 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300',
             dotClass: 'bg-blue-600 dark:bg-blue-400',
             title: 'Permintaan Tidak Valid',
-            description: 'Format permintaan data atau parameter yang dikirimkan tidak dapat diproses oleh server sistem STASIKATOR.',
+            description: 'Format permintaan data atau parameter yang dikirimkan tidak dapat diproses oleh server sistem STAS RG Projects.',
             primaryAction: { label: 'Coba Muat Ulang', icon: RefreshCw, onClick: () => window.location.reload() },
             secondaryAction: { label: 'Kembali ke Beranda', icon: Home, href: '/' },
         },
@@ -41,7 +41,7 @@ export default function ErrorPage({ status = 404, message }) {
             badgeClass: 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300',
             dotClass: 'bg-blue-600 dark:bg-blue-400',
             title: 'Halaman Tidak Ditemukan',
-            description: 'Halaman atau dokumen spesifikasi riset yang Anda tuju tidak ditemukan pada sistem repositori STASIKATOR atau mungkin telah dipindahkan.',
+            description: 'Halaman atau dokumen spesifikasi riset yang Anda tuju tidak ditemukan pada sistem repositori STAS RG Projects atau mungkin telah dipindahkan.',
             primaryAction: { label: 'Kembali ke Beranda', icon: Home, href: '/' },
             secondaryAction: { label: 'Kembali', icon: ArrowLeft, onClick: () => window.history.length > 1 ? window.history.back() : router.visit('/') },
         },
@@ -73,7 +73,7 @@ export default function ErrorPage({ status = 404, message }) {
             badgeClass: 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300',
             dotClass: 'bg-rose-600 dark:bg-rose-400',
             title: 'Terjadi Kesalahan pada Server',
-            description: 'Sistem STASIKATOR mengalami kendala teknis saat memproses permintaan ini. Tim administrator laboratorium telah mencatat aktivitas ini.',
+            description: 'Sistem STAS RG Projects mengalami kendala teknis saat memproses permintaan ini. Tim administrator laboratorium telah mencatat aktivitas ini.',
             primaryAction: { label: 'Coba Muat Ulang', icon: RefreshCw, onClick: () => window.location.reload() },
             secondaryAction: { label: 'Kembali ke Beranda', icon: Home, href: '/' },
             infoPill: 'Jika masalah berlanjut, hubungi tim dukungan di stas.research@telkomuniversity.ac.id',
@@ -84,7 +84,7 @@ export default function ErrorPage({ status = 404, message }) {
             badgeClass: 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300',
             dotClass: 'bg-rose-600 dark:bg-rose-400',
             title: 'Layanan Sedang dalam Pemeliharaan',
-            description: 'Sistem STASIKATOR saat ini sedang menjalani proses pemeliharaan rutin atau peningkatan infrastruktur server. Kami akan segera kembali aktif.',
+            description: 'Sistem STAS RG Projects saat ini sedang menjalani proses pemeliharaan rutin atau peningkatan infrastruktur server. Kami akan segera kembali aktif.',
             primaryAction: { label: 'Coba Muat Ulang', icon: RefreshCw, onClick: () => window.location.reload() },
             secondaryAction: { label: 'Kunjungi Website STAS-RG', icon: ExternalLink, href: 'https://www.stas-rg.com' },
             infoPill: 'Laboratorium CoE STAS-RG • Fakultas Ilmu Terapan Telkom University.',
@@ -111,7 +111,7 @@ export default function ErrorPage({ status = 404, message }) {
 
     return (
         <div className="min-h-screen bg-[#FAFBFD] dark:bg-[#090D16] text-slate-900 dark:text-white flex flex-col justify-between items-center p-4 sm:p-6 relative overflow-x-hidden selection:bg-[#0AB600]/20 selection:text-[#0AB600]">
-            <Head title={`${config.code} — ${config.title} | STASIKATOR`} />
+            <Head title={`${config.code} — ${config.title} | STAS RG Projects`} />
 
             {/* Ambient Background Glow Effect (Subtle SaaS light) */}
             <div className="ambient-glow" style={{ filter: 'blur(64px)', WebkitFilter: 'blur(64px)' }} />

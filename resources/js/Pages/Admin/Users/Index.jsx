@@ -803,7 +803,7 @@ export default function UsersIndex({ users, stats, filters = {} }) {
                                     type="text"
                                     value={createForm.name}
                                     onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                                    placeholder={u.placeholderFullName || 'cth. Fatin Muflihuts Tsani'}
+                                    placeholder={u.placeholderFullName || 'Masukkan nama lengkap pengguna'}
                                     required
                                     className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
                                 />
@@ -820,7 +820,7 @@ export default function UsersIndex({ users, stats, filters = {} }) {
                                         type="text"
                                         value={createForm.username}
                                         onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                                        placeholder={u.placeholderUsername || 'cth. fatintsani'}
+                                        placeholder={u.placeholderUsername || 'Masukkan username (opsional)'}
                                         className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
                                     />
                                 </div>
@@ -833,7 +833,7 @@ export default function UsersIndex({ users, stats, filters = {} }) {
                                         type="email"
                                         value={createForm.email}
                                         onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                                        placeholder={u.placeholderEmail || 'nama@telkomuniversity.ac.id'}
+                                        placeholder={u.placeholderEmail || 'Masukkan alamat email pengguna'}
                                         required
                                         className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
                                     />
@@ -852,7 +852,7 @@ export default function UsersIndex({ users, stats, filters = {} }) {
                                         type={showCreatePassword ? 'text' : 'password'}
                                         value={createForm.password}
                                         onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                                        placeholder={u.placeholderPassword || 'Minimal 8 karakter'}
+                                        placeholder={u.placeholderPassword || 'Masukkan kata sandi awal (min. 8 karakter)'}
                                         required
                                         minLength={8}
                                         className="w-full px-3 py-2 pr-10 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"

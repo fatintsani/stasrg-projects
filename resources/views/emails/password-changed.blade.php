@@ -1,11 +1,11 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Kata Sandi Berhasil Diubah')
-@section('header_subtitle', 'Peringatan Keamanan Akun STASIKATOR')
+@section('header_subtitle', 'Peringatan Keamanan Akun STAS RG Projects')
 
 @section('content')
     <h2 class="email-title">Kata Sandi Berhasil Diperbarui</h2>
-    <p class="email-subtitle">Kata sandi akun STASIKATOR Anda baru saja diperbarui.</p>
+    <p class="email-subtitle">Kata sandi akun STAS RG Projects Anda baru saja diperbarui.</p>
 
     <div class="greeting">
         Halo {{ $user->name }},

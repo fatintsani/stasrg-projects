@@ -312,4 +312,194 @@ class AiIntegrationTest extends TestCase
         $benefitsPlainLen = AiAssistantService::getPlainTextLength($data['benefits']);
         $this->assertLessThanOrEqual(260, $benefitsPlainLen);
     }
+
+    public function test_admin_can_generate_executive_summary_with_smart_assist(): void
+    {
+        SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        SystemSetting::set('ai_provider', 'gemini');
+        SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        $fakeExecPayload = [
+            'executive_summary' => 'Inovasi ini menghadirkan sistem pemantauan berbasis IoT cerdas untuk peternakan modern.',
+            'strategic_highlights' => [
+                'Meningkatkan efisiensi energi 35%',
+                'Mengurangi risiko mortalitas ternak',
+            ],
+            'recommended_short_desc' => 'Sistem pemantauan IoT cerdas hemat daya untuk peternakan presisi.',
+            'target_beneficiaries' => ['Peternak Modern', 'Dinas Peternakan'],
+        ];
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => json_encode($fakeExecPayload)],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/projects/ai-smart-assist', [
+                'action' => 'executive_summary',
+                'payload' => [
+                    'title' => 'Smart Poultry Monitoring IoT',
+                    'category' => 'Smart Agriculture',
+                    'description' => 'Sistem pemantauan kandang ayam dengan sensor suhu dan LoRaWAN.',
+                ],
+                'language' => 'id',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'action' => 'executive_summary',
+            'data' => [
+                'executive_summary' => 'Inovasi ini menghadirkan sistem pemantauan berbasis IoT cerdas untuk peternakan modern.',
+            ],
+        ]);
+    }
+
+    public function test_admin_can_format_academic_abstract_with_smart_assist(): void
+    {
+        SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        SystemSetting::set('ai_provider', 'gemini');
+        SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        $fakeAbstractPayload = [
+            'abstract_id' => [
+                'background' => 'Kebutuhan monitoring iklim mikro peternakan semakin mendesak.',
+                'methods' => 'Penelitian ini merancang arsitektur telemetri berbasis LoRaWAN dan ESP32.',
+                'results' => 'Sistem berhasil mencapai latency pengiriman di bawah 1.5 detik dengan efisiensi 40%.',
+                'conclusion' => 'Solusi ini terbukti andal dalam menjaga kestabilan lingkungan kandang.',
+                'full_paragraph' => 'Kebutuhan monitoring iklim mikro peternakan semakin mendesak. Penelitian ini merancang arsitektur telemetri berbasis LoRaWAN dan ESP32. Sistem berhasil mencapai latency pengiriman di bawah 1.5 detik dengan efisiensi 40%. Solusi ini terbukti andal dalam menjaga kestabilan lingkungan kandang.',
+            ],
+            'abstract_en' => [
+                'background' => 'Real-time microclimate monitoring is essential for poultry farming.',
+                'methods' => 'This study presents a LoRaWAN-based telemetry architecture with ESP32.',
+                'results' => 'The system achieved sub-1.5s latency and improved farm efficiency by 40%.',
+                'conclusion' => 'The solution proves robust for automated livestock environment stabilization.',
+                'full_paragraph' => 'Real-time microclimate monitoring is essential for poultry farming. This study presents a LoRaWAN-based telemetry architecture with ESP32. The system achieved sub-1.5s latency and improved farm efficiency by 40%. The solution proves robust for automated livestock environment stabilization.',
+            ],
+            'keywords_id' => ['Internet of Things', 'LoRaWAN', 'Peternakan Cerdas'],
+            'keywords_en' => ['Internet of Things', 'LoRaWAN', 'Smart Poultry'],
+        ];
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => json_encode($fakeAbstractPayload)],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/projects/ai-smart-assist', [
+                'action' => 'format_abstract',
+                'text' => 'Ide awal pemantauan kandang ayam dengan sensor suhu dan LoRaWAN...',
+                'context' => [
+                    'title' => 'Smart Poultry Monitoring',
+                ],
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'action' => 'format_abstract',
+            'data' => [
+                'abstract_id' => [
+                    'background' => 'Kebutuhan monitoring iklim mikro peternakan semakin mendesak.',
+                ],
+            ],
+        ]);
+    }
+
+    public function test_admin_can_translate_bidirectionally_with_smart_assist(): void
+    {
+        SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        SystemSetting::set('ai_provider', 'gemini');
+        SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => 'An automated IoT-based poultry cage environmental monitoring system.'],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/projects/ai-smart-assist', [
+                'action' => 'translate',
+                'text' => 'Sistem monitoring lingkungan kandang ayam otomatis berbasis IoT.',
+                'from_lang' => 'id',
+                'to_lang' => 'en',
+                'mode' => 'academic',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'action' => 'translate',
+            'from_lang' => 'id',
+            'to_lang' => 'en',
+            'translated_text' => 'An automated IoT-based poultry cage environmental monitoring system.',
+        ]);
+    }
+
+    public function test_admin_can_auto_summarize_to_character_limit_with_smart_assist(): void
+    {
+        SystemSetting::setSecret('ai_api_key', 'AIzaSyFakeValidKey123');
+        SystemSetting::set('ai_provider', 'gemini');
+        SystemSetting::set('ai_model', 'gemini-3.6-flash');
+
+        $longText = str_repeat('Sistem inovasi telemetri cerdas untuk monitoring lingkungan peternakan terpadu. ', 10);
+        $shortSummarized = 'Sistem telemetri cerdas terpadu untuk monitoring iklim mikro peternakan secara efisien.';
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => $shortSummarized],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/projects/ai-smart-assist', [
+                'action' => 'auto_summarize',
+                'text' => $longText,
+                'max_chars' => 150,
+                'content_type' => 'paragraph',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'action' => 'auto_summarize',
+            'max_chars' => 150,
+        ]);
+        $this->assertLessThanOrEqual(150, mb_strlen(strip_tags($response->json('summarized_text'))));
+    }
 }

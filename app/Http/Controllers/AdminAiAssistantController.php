@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\AiAssistantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,6 +36,10 @@ class AdminAiAssistantController extends Controller
         $aiModel = SystemSetting::get('ai_model', 'gemini-3.6-flash');
         $hasApiKey = ! empty(SystemSetting::get('ai_api_key'));
 
+        $projectsList = Project::orderBy('title')->get([
+            'id', 'title', 'name', 'category', 'description', 'problem_solution', 'benefits', 'specifications', 'content_en',
+        ]);
+
         return Inertia::render('Admin/AiAssistant/Index', [
             'stats' => $stats,
             'aiConfig' => [
@@ -44,7 +49,145 @@ class AdminAiAssistantController extends Controller
             ],
             'categories' => Project::distinct('category')->whereNotNull('category')->pluck('category'),
             'researchersCount' => $stats['total_researchers'],
+            'projectsList' => $projectsList,
         ]);
+    }
+
+    /**
+     * Handle dedicated AI Smart Assist actions: executive summary, abstract formatting, translation, auto-summarizing.
+     */
+    public function smartAssist(Request $request): JsonResponse
+    {
+        $action = (string) $request->input('action', '');
+        $payload = $request->input('payload', []);
+        $context = $request->input('context', []);
+        $text = (string) ($request->input('text') ?: ($payload['text'] ?? ''));
+
+        if ($request->filled('project_id') && empty($payload)) {
+            $project = Project::find($request->input('project_id'));
+            if ($project) {
+                $payload = $project->toArray();
+            }
+        }
+
+        try {
+            switch ($action) {
+                case 'executive_summary':
+                    $projectData = ! empty($payload) && is_array($payload) ? $payload : $context;
+                    $language = (string) $request->input('language', 'id');
+                    $result = AiAssistantService::generateExecutiveSummary($projectData, $language);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'success' => true,
+                        'action' => 'executive_summary',
+                        'result' => $result,
+                        'data' => $result,
+                    ]);
+
+                case 'format_abstract':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'status' => 'error',
+                            'success' => false,
+                            'error' => 'Silakan masukkan draf, catatan, atau rincian inovasi yang ingin disusun menjadi abstrak.',
+                        ], 422);
+                    }
+
+                    $targetLang = (string) $request->input('target_lang', 'both');
+                    $result = AiAssistantService::formatAcademicAbstract($text, $context, $targetLang);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'success' => true,
+                        'action' => 'format_abstract',
+                        'result' => $result,
+                        'data' => $result,
+                    ]);
+
+                case 'translate':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'status' => 'error',
+                            'success' => false,
+                            'error' => 'Silakan masukkan teks yang ingin diterjemahkan.',
+                        ], 422);
+                    }
+
+                    $fromLang = (string) $request->input('from_lang', 'id');
+                    $toLang = (string) $request->input('to_lang', 'en');
+                    $mode = (string) $request->input('mode', 'academic');
+
+                    $translatedText = AiAssistantService::translateBidirectional($text, $fromLang, $toLang, $mode);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'success' => true,
+                        'action' => 'translate',
+                        'translated_text' => $translatedText,
+                        'result' => $translatedText,
+                        'from_lang' => $fromLang,
+                        'to_lang' => $toLang,
+                    ]);
+
+                case 'auto_summarize':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'status' => 'error',
+                            'success' => false,
+                            'error' => 'Silakan masukkan teks yang ingin diringkas.',
+                        ], 422);
+                    }
+
+                    $maxChars = (int) $request->input('max_chars', 350);
+                    $contentType = (string) $request->input('content_type', 'paragraph');
+
+                    $summarized = AiAssistantService::autoSummarizeToLimit($text, $maxChars, $contentType);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'success' => true,
+                        'action' => 'auto_summarize',
+                        'summary' => $summarized,
+                        'summarized_text' => $summarized,
+                        'result' => $summarized,
+                        'char_count' => mb_strlen(strip_tags($summarized)),
+                        'max_chars' => $maxChars,
+                    ]);
+
+                case 'polish_grammar':
+                    if (empty(trim($text))) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'Silakan masukkan teks yang ingin diperbaiki tata bahasanya.',
+                        ], 422);
+                    }
+
+                    $lang = (string) $request->input('language', 'id');
+                    $tone = (string) $request->input('tone', 'academic');
+
+                    $polished = AiAssistantService::polishGrammar($text, $lang, $tone);
+
+                    return response()->json([
+                        'success' => true,
+                        'action' => 'polish_grammar',
+                        'polished_text' => $polished,
+                    ]);
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Aksi smart assist tidak dikenali.',
+                    ], 400);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Admin NARA Smart Assist Error: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memproses permintaan AI Smart Assist: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

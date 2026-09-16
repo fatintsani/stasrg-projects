@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasVersions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Support\Str;
 
 class ProjectTemplate extends Model
 {
-    use HasFactory;
+    use HasFactory, HasVersions;
 
     /**
      * @var list<string>

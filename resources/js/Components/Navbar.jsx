@@ -54,18 +54,17 @@ export default function Navbar() {
     const user = pageProps?.auth?.user;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeSection, setActiveSection] = useState(() => {
-        if (typeof window !== 'undefined' && window.location.pathname === '/support') {
-            return 'support';
-        }
-        if (typeof window !== 'undefined' && window.location.pathname === '/nara') {
-            return 'nara';
+        if (typeof window !== 'undefined') {
+            if (window.location.pathname === '/katalog' || window.location.pathname === '/catalog') return 'katalog';
+            if (window.location.pathname === '/support') return 'support';
+            if (window.location.pathname === '/nara') return 'nara';
         }
         return 'overview';
     });
 
     const navItems = [
         { name: t.nav?.overview || 'Overview', href: '/#overview', id: 'overview', icon: Home },
-        { name: 'Showcase', href: '/#projects-showcase', id: 'projects-showcase', icon: FolderKanban },
+        { name: 'Showcase', href: '/#projects-showcase', id: 'projects-showcase', icon: Layers },
         { name: 'NARA AI', href: '/nara', id: 'nara', icon: Bot, mobileOnly: true },
         { name: t.nav?.about || 'Tentang', href: '/#about', id: 'about', icon: Compass },
         { name: t.nav?.principles || 'Prinsip', href: '/#principles', id: 'principles', icon: Layers },
@@ -77,6 +76,15 @@ export default function Navbar() {
 
     const handleNavClick = (e, item) => {
         setIsMobileMenuOpen(false);
+
+        if (item.id === 'katalog' || item.href === '/katalog') {
+            if (typeof window !== 'undefined' && (window.location.pathname === '/katalog' || window.location.pathname === '/catalog')) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setActiveSection('katalog');
+            }
+            return;
+        }
 
         if (item.id === 'support' || item.href === '/support') {
             if (typeof window !== 'undefined' && window.location.pathname === '/support') {
@@ -110,6 +118,10 @@ export default function Navbar() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            if (window.location.pathname === '/katalog' || window.location.pathname === '/catalog') {
+                setActiveSection('katalog');
+                return;
+            }
             if (window.location.pathname === '/support') {
                 setActiveSection('support');
                 return;

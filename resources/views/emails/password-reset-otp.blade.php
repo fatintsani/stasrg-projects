@@ -1,7 +1,7 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Kode OTP Pemulihan Kata Sandi')
-@section('header_subtitle', 'Verifikasi Keamanan Akun STASIKATOR')
+@section('header_subtitle', 'Verifikasi Keamanan Akun STAS RG Projects')
 
 @section('content')
     <div class="badge-pill badge-warning" style="margin-bottom: 12px;">

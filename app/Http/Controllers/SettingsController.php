@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\SystemSetting;
 use App\Services\ActivityLogger;
 use App\Services\AiAssistantService;
+use App\Services\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +19,14 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SettingsController extends Controller
 {
     /**
      * Display the application and user settings page.
      */
-    public function index(Request $request): Response
+    public function index(Request $request, BackupService $backupService): Response
     {
         $user = $request->user();
 
@@ -62,6 +64,9 @@ class SettingsController extends Controller
             'storage_size' => $this->getStorageSize(),
         ];
 
+        // Backup & storage stats
+        $backupSummary = $backupService->getSummary();
+
         return Inertia::render('Admin/Settings', [
             'user' => [
                 'id' => $user->id,
@@ -79,6 +84,7 @@ class SettingsController extends Controller
             'projectStats' => $projectStats,
             'aiSettings' => $aiSettings,
             'systemInfo' => $systemInfo,
+            'backupSummary' => $backupSummary,
             'appFont' => SystemSetting::get('app_font', 'plus-jakarta-sans'),
         ]);
     }
@@ -330,6 +336,127 @@ class SettingsController extends Controller
         $user->update(['avatar' => null]);
 
         return back()->with('success', 'Foto profil berhasil dihapus.')->with('message', 'Foto profil berhasil dihapus.');
+    }
+
+    /**
+     * Download database SQL snapshot.
+     */
+    public function downloadDatabaseBackup(Request $request, BackupService $backupService): BinaryFileResponse
+    {
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya administrator yang dapat mengunduh backup database.');
+        }
+
+        $filePath = $backupService->createDatabaseSnapshotFile();
+        $fileName = basename($filePath);
+
+        ActivityLogger::logSystem(
+            action: 'system.backup_database_downloaded',
+            description: "Mengunduh snapshot database sistem ({$fileName})",
+            properties: ['filename' => $fileName],
+            user: $request->user(),
+            request: $request
+        );
+
+        return response()->download($filePath, $fileName, [
+            'Content-Type' => 'application/sql',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Download media assets ZIP archive.
+     */
+    public function downloadMediaBackup(Request $request, BackupService $backupService): BinaryFileResponse
+    {
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya administrator yang dapat mengunduh arsip media.');
+        }
+
+        $filePath = $backupService->createMediaArchiveFile();
+        $fileName = basename($filePath);
+
+        ActivityLogger::logSystem(
+            action: 'system.backup_media_downloaded',
+            description: "Mengunduh arsip direktori aset media sistem ({$fileName})",
+            properties: ['filename' => $fileName],
+            user: $request->user(),
+            request: $request
+        );
+
+        return response()->download($filePath, $fileName, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Download full snapshot (Database + Media Assets) ZIP bundle.
+     */
+    public function downloadFullBackup(Request $request, BackupService $backupService): BinaryFileResponse
+    {
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya administrator yang dapat mengunduh paket backup lengkap.');
+        }
+
+        $filePath = $backupService->createFullBundleFile();
+        $fileName = basename($filePath);
+
+        ActivityLogger::logSystem(
+            action: 'system.backup_full_downloaded',
+            description: "Mengunduh paket arsip snapshot lengkap (Database + Media) sistem ({$fileName})",
+            properties: ['filename' => $fileName],
+            user: $request->user(),
+            request: $request
+        );
+
+        return response()->download($filePath, $fileName, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Restore database or media assets from uploaded snapshot.
+     */
+    public function restoreBackup(Request $request, BackupService $backupService): RedirectResponse
+    {
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya administrator yang dapat melakukan restorasi snapshot.');
+        }
+
+        $request->validate([
+            'backup_file' => ['required', 'file', 'max:204800'],
+        ], [
+            'backup_file.required' => 'File snapshot wajib dipilih.',
+            'backup_file.max' => 'Ukuran file snapshot maksimal adalah 200 MB.',
+        ]);
+
+        $file = $request->file('backup_file');
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        if (! in_array($extension, ['sql', 'zip', 'txt'])) {
+            return back()->withErrors(['backup_file' => 'Format file tidak didukung. Harap unggah file berekstensi .sql atau .zip.']);
+        }
+
+        try {
+            $result = $backupService->restoreFromUpload($file);
+
+            ActivityLogger::logSystem(
+                action: 'system.backup_restored',
+                description: 'Memulihkan data sistem dari file cadangan ('.$file->getClientOriginalName().')',
+                properties: [
+                    'original_filename' => $file->getClientOriginalName(),
+                    'file_size' => $file->getSize(),
+                    'details' => $result['details'] ?? null,
+                ],
+                user: $request->user(),
+                request: $request
+            );
+
+            return back()->with('success', $result['message'])->with('message', $result['message']);
+        } catch (\Throwable $e) {
+            Log::error('Restore snapshot failed: '.$e->getMessage());
+
+            return back()->withErrors(['backup_file' => 'Gagal memulihkan snapshot: '.$e->getMessage()]);
+        }
     }
 
     /**

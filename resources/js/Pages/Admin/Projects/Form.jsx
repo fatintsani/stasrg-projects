@@ -62,10 +62,18 @@ import {
     Mail,
     Award,
     ShieldCheck,
+    History,
+    Scissors,
+    MoveVertical,
+    MoveHorizontal,
+    Crosshair,
+    ArrowUp,
+    ArrowDown,
 } from 'lucide-react';
 import { downloadFlyerAsPng, printFlyer } from '../../../Utils/flyerExport';
 import { compressImage, formatFileSize } from '../../../Utils/imageCompressor';
 import ExportSosmedModal from '../../../Components/Admin/ExportSosmedModal';
+import VersionHistoryModal from '../../../Components/Admin/VersionHistoryModal';
 import {
     AVAILABLE_SOCIAL_PLATFORMS,
     normalizeSocialLinks,
@@ -211,6 +219,7 @@ export default function Form({ project = null, categories = [] }) {
     // Template Picker & Save as Template States
     const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
     const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false);
+    const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
     const [templateName, setTemplateName] = useState('');
     const [templateDesc, setTemplateDesc] = useState('');
     const [savingTemplate, setSavingTemplate] = useState(false);
@@ -241,6 +250,9 @@ export default function Form({ project = null, categories = [] }) {
 
     // Browser Local Storage Auto-Save & Draft Cache
     const draftStorageKey = isEditing
+        ? `stasrg_draft_edit_${project?.id || project?.slug}`
+        : 'stasrg_draft_create';
+    const legacyDraftStorageKey = isEditing
         ? `stasikator_draft_edit_${project?.id || project?.slug}`
         : 'stasikator_draft_create';
 
@@ -251,7 +263,7 @@ export default function Form({ project = null, categories = [] }) {
     // 1. Restore cached draft from localStorage on initial page load
     useEffect(() => {
         try {
-            const raw = localStorage.getItem(draftStorageKey);
+            const raw = localStorage.getItem(draftStorageKey) || localStorage.getItem(legacyDraftStorageKey);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed && parsed.data) {
@@ -1393,6 +1405,18 @@ export default function Form({ project = null, categories = [] }) {
                                 <BookmarkCheck className="w-3.5 h-3.5 text-[#0AB600]" />
                                 <span>Simpan Template</span>
                             </button>
+
+                            {isEditing && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsVersionModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold transition-all cursor-pointer"
+                                    title="Lihat Riwayat Versi & Rollback"
+                                >
+                                    <History className="w-3.5 h-3.5 text-[#0AB600]" />
+                                    <span>Riwayat Versi</span>
+                                </button>
+                            )}
                         </div>
 
                         {/* Baris 2: Primary Actions (Rata Kanan) */}
@@ -1565,7 +1589,7 @@ export default function Form({ project = null, categories = [] }) {
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0AB600]/10 hover:bg-[#0AB600]/15 text-[#0AB600] border border-[#0AB600]/30 text-xs font-bold transition-all cursor-pointer disabled:opacity-40"
                                         >
                                             {isTranslatingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                                            <span>Re-Translate AI</span>
+                                            <span>Re-Translate</span>
                                         </button>
                                     </div>
 
@@ -1615,9 +1639,11 @@ export default function Form({ project = null, categories = [] }) {
 
                                         {/* English Description */}
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                                                Research Summary / Description in English
-                                            </label>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                                                    Research Summary / Description in English
+                                                </label>
+                                            </div>
                                             <RichTextEditor
                                                 value={data.content_en?.description || ''}
                                                 onChange={(val) => handleUpdateContentEn('description', val)}
@@ -1984,20 +2010,22 @@ export default function Form({ project = null, categories = [] }) {
                                             <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300">
                                                 {pf.descriptionLabel || 'Deskripsi Singkat Sistem / Riset'}
                                             </label>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleGenerateOrPolishSection('description', data.description)}
-                                                disabled={polishingSection === 'description' || (!data.name && !data.description)}
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0AB600]/10 hover:bg-[#0AB600]/15 dark:bg-[#0AB600]/10 dark:hover:bg-[#0AB600]/15 text-[#0AB600] border border-[#0AB600]/30 text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-40"
-                                                title={data.description ? (language === 'en' ? 'Polish description with AI' : 'Poles deskripsi agar lebih akademis dan ringkas') : (language === 'en' ? 'Generate draft description from Project Name & Category' : 'Generate draf deskripsi dari Nama Proyek & Kategori')}
-                                            >
-                                                {polishingSection === 'description' ? (
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                                ) : (
-                                                    <Sparkles className="w-3 h-3 text-[#0AB600]" />
-                                                )}
-                                                <span>{data.description ? (pf.aiPolishWithAI || 'Poles Deskripsi') : (pf.aiWriteWithAI || 'Generate Deskripsi')}</span>
-                                            </button>
+                                            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleGenerateOrPolishSection('description', data.description)}
+                                                    disabled={polishingSection === 'description' || (!data.name && !data.description)}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0AB600]/10 hover:bg-[#0AB600]/15 dark:bg-[#0AB600]/10 dark:hover:bg-[#0AB600]/15 text-[#0AB600] border border-[#0AB600]/30 text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-40"
+                                                    title={data.description ? (language === 'en' ? 'Polish description with AI' : 'Poles deskripsi agar lebih akademis dan ringkas') : (language === 'en' ? 'Generate draft description from Project Name & Category' : 'Generate draf deskripsi dari Nama Proyek & Kategori')}
+                                                >
+                                                    {polishingSection === 'description' ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                        <Sparkles className="w-3 h-3 text-[#0AB600]" />
+                                                    )}
+                                                    <span>{data.description ? (pf.aiPolishWithAI || 'Poles Deskripsi') : (pf.aiWriteWithAI || 'Generate Deskripsi')}</span>
+                                                </button>
+                                            </div>
                                         </div>
                                         <RichTextEditor
                                             value={data.description}
@@ -2234,7 +2262,12 @@ export default function Form({ project = null, categories = [] }) {
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                                         {activePanel.image_url ? (
                                             <div className="w-32 h-24 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 relative shrink-0 group bg-zinc-100 dark:bg-zinc-800">
-                                                <img src={activePanel.image_url} alt={`Kotak ${activeTrifoldTab + 1}`} className="w-full h-full object-cover" />
+                                                <img 
+                                                    src={activePanel.image_url} 
+                                                    alt={`Kotak ${activeTrifoldTab + 1}`} 
+                                                    className="w-full h-full object-cover transition-all" 
+                                                    style={{ objectPosition: `${activePanel.image_x ?? 50}% ${activePanel.image_y ?? 50}%` }}
+                                                />
                                                 <button
                                                     type="button"
                                                     onClick={() => handleUpdatePanel(activeTrifoldTab, 'image_url', null)}
@@ -2288,80 +2321,289 @@ export default function Form({ project = null, categories = [] }) {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col sm:flex-row items-center gap-4">
-                                    {imagePreviewUrl ? (
-                                        <div className="w-36 h-28 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 relative group bg-zinc-100">
-                                            <img
-                                                src={imagePreviewUrl}
-                                                alt="Preview"
-                                                className="w-full h-full object-cover"
-                                            />
-                                            <label className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-semibold cursor-pointer">
-                                                {pf.changeImage || (language === 'en' ? 'Change Photo' : 'Ganti Foto')}
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleImageChange}
-                                                    className="hidden"
+                                <div className="space-y-3">
+                                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                                        {imagePreviewUrl ? (
+                                            <div className="w-36 h-28 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 relative group bg-zinc-100">
+                                                <img
+                                                    src={imagePreviewUrl}
+                                                    alt="Preview"
+                                                    className="w-full h-full object-cover transition-all"
+                                                    style={{ objectPosition: `${data.layout_schema?.image_x ?? 50}% ${data.layout_schema?.image_y ?? 50}%` }}
                                                 />
-                                            </label>
-                                        </div>
-                                    ) : (
-                                        <div className="w-36 h-28 shrink-0 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center text-zinc-400 bg-zinc-50 dark:bg-zinc-900">
-                                            <ImageIcon className="w-6 h-6 mb-1" />
-                                            <span className="text-[10px]">No image</span>
-                                        </div>
-                                    )}
-
-                                    <div className="flex-1 w-full space-y-2">
-                                        {isCompressingImage ? (
-                                            <div className="p-4 rounded-xl border border-[#0AB600]/30 bg-[#0AB600]/10 space-y-2.5 animate-in fade-in">
-                                                <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-[#0AB600]">
-                                                    <div className="flex items-center gap-2">
-                                                        <Loader2 className="w-4 h-4 animate-spin text-[#0AB600]" />
-                                                        <span>{compressionProgress?.stage || (language === 'en' ? 'Compressing image automatically...' : 'Mengompresi gambar otomatis...')}</span>
-                                                    </div>
-                                                    <span className="font-mono text-[11px]">{compressionProgress?.percent || 0}%</span>
-                                                </div>
-                                                <div className="w-full bg-[#0AB600]/20 dark:bg-[#0AB600]/15 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="bg-[#0AB600] h-2 rounded-full transition-all duration-300"
-                                                        style={{ width: `${compressionProgress?.percent || 15}%` }}
+                                                <label className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-semibold cursor-pointer">
+                                                    {pf.changeImage || (language === 'en' ? 'Change Photo' : 'Ganti Foto')}
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageChange}
+                                                        className="hidden"
                                                     />
-                                                </div>
-                                                <p className="text-[11px] text-[#0AB600]/80 dark:text-[#0AB600]/80">
-                                                    {language === 'en' ? 'Adjusting resolution and quality for optimal print & download.' : 'Menyesuaikan resolusi dan kualitas gambar agar optimal untuk dicetak & diunduh.'}
-                                                </p>
+                                                </label>
                                             </div>
                                         ) : (
-                                            <label className="flex flex-col items-center justify-center p-4 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-center">
-                                                <Upload className="w-5 h-5 text-[#0AB600] mb-1" />
-                                                <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200">
-                                                    {pf.uploadImage || (language === 'en' ? 'Click to upload prototype photo' : 'Klik untuk upload foto prototype')}
-                                                </span>
-                                                <span className="text-[11px] text-zinc-400 mt-0.5">
-                                                    {pf.mainImageUploadHint || (language === 'en' ? 'Supports all image formats (Automatically compressed to stay lightweight & sharp)' : 'Mendukung semua ukuran gambar (Otomatis dikompresi agar ringan & tajam)')}
-                                                </span>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleImageChange}
-                                                    className="hidden"
-                                                />
-                                            </label>
-                                        )}
-
-                                        {imageCompressionStats?.wasCompressed && (
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0AB600]/10 border border-[#0AB600]/30 text-xs font-semibold text-[#0AB600]">
-                                                <CheckCircle2 className="w-4 h-4 text-[#0AB600] shrink-0" />
-                                                <span>{language === 'en' ? 'Optimally compressed:' : 'Otomatis terkompresi:'} {imageCompressionStats.originalSizeStr} &rarr; {imageCompressionStats.compressedSizeStr} ({language === 'en' ? 'Saved' : 'Hemat'} {imageCompressionStats.savedPercent}%)</span>
+                                            <div className="w-36 h-28 shrink-0 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center text-zinc-400 bg-zinc-50 dark:bg-zinc-900">
+                                                <ImageIcon className="w-6 h-6 mb-1" />
+                                                <span className="text-[10px]">No image</span>
                                             </div>
                                         )}
 
-                                        {errors.main_image && <p className="text-rose-500 text-[11px] mt-1">{errors.main_image}</p>}
+                                        <div className="flex-1 w-full space-y-2">
+                                            {isCompressingImage ? (
+                                                <div className="p-4 rounded-xl border border-[#0AB600]/30 bg-[#0AB600]/10 space-y-2.5 animate-in fade-in">
+                                                    <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-[#0AB600]">
+                                                        <div className="flex items-center gap-2">
+                                                            <Loader2 className="w-4 h-4 animate-spin text-[#0AB600]" />
+                                                            <span>{compressionProgress?.stage || (language === 'en' ? 'Compressing image automatically...' : 'Mengompresi gambar otomatis...')}</span>
+                                                        </div>
+                                                        <span className="font-mono text-[11px]">{compressionProgress?.percent || 0}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-[#0AB600]/20 dark:bg-[#0AB600]/15 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className="bg-[#0AB600] h-2 rounded-full transition-all duration-300"
+                                                            style={{ width: `${compressionProgress?.percent || 15}%` }}
+                                                        />
+                                                    </div>
+                                                    <p className="text-[11px] text-[#0AB600]/80 dark:text-[#0AB600]/80">
+                                                        {language === 'en' ? 'Adjusting resolution and quality for optimal print & download.' : 'Menyesuaikan resolusi dan kualitas gambar agar optimal untuk dicetak & diunduh.'}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <label className="flex flex-col items-center justify-center p-4 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-center">
+                                                    <Upload className="w-5 h-5 text-[#0AB600] mb-1" />
+                                                    <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200">
+                                                        {pf.uploadImage || (language === 'en' ? 'Click to upload prototype photo' : 'Klik untuk upload foto prototype')}
+                                                    </span>
+                                                    <span className="text-[11px] text-zinc-400 mt-0.5">
+                                                        {pf.mainImageUploadHint || (language === 'en' ? 'Supports all image formats (Automatically compressed to stay lightweight & sharp)' : 'Mendukung semua ukuran gambar (Otomatis dikompresi agar ringan & tajam)')}
+                                                    </span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageChange}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            )}
+
+                                            {imageCompressionStats?.wasCompressed && (
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0AB600]/10 border border-[#0AB600]/30 text-xs font-semibold text-[#0AB600]">
+                                                    <CheckCircle2 className="w-4 h-4 text-[#0AB600] shrink-0" />
+                                                    <span>{language === 'en' ? 'Optimally compressed:' : 'Otomatis terkompresi:'} {imageCompressionStats.originalSizeStr} &rarr; {imageCompressionStats.compressedSizeStr} ({language === 'en' ? 'Saved' : 'Hemat'} {imageCompressionStats.savedPercent}%)</span>
+                                                </div>
+                                            )}
+
+                                            {errors.main_image && <p className="text-rose-500 text-[11px] mt-1">{errors.main_image}</p>}
+                                        </div>
                                     </div>
                                 </div>
                             )}
+
+                            {/* Reposition & Focal Point Controller (Posisi Ke Atas / Ke Bawah / Kiri / Kanan) */}
+                            {((data.doc_format === 'brochure_trifold' && activePanel.image_url) || (data.doc_format !== 'brochure_trifold' && imagePreviewUrl)) && (() => {
+                                const isTrifold = data.doc_format === 'brochure_trifold';
+                                const activeImgSrc = isTrifold ? activePanel.image_url : imagePreviewUrl;
+                                const curX = isTrifold ? (activePanel.image_x !== undefined ? Number(activePanel.image_x) : 50) : (data.layout_schema?.image_x !== undefined ? Number(data.layout_schema.image_x) : 50);
+                                const curY = isTrifold ? (activePanel.image_y !== undefined ? Number(activePanel.image_y) : 50) : (data.layout_schema?.image_y !== undefined ? Number(data.layout_schema.image_y) : 50);
+
+                                const updatePos = (newX, newY) => {
+                                    const clampedX = Math.max(0, Math.min(100, Math.round(Number(newX))));
+                                    const clampedY = Math.max(0, Math.min(100, Math.round(Number(newY))));
+                                    if (isTrifold) {
+                                        const updatedPanels = currentPanels.map((p, idx) => {
+                                            if (idx === activeTrifoldTab) {
+                                                return { ...p, image_x: clampedX, image_y: clampedY };
+                                            }
+                                            return { ...p };
+                                        });
+                                        setData((prev) => ({
+                                            ...prev,
+                                            problem_solution: {
+                                                ...prev.problem_solution,
+                                                panels: updatedPanels,
+                                            },
+                                        }));
+                                    } else {
+                                        setData((prev) => ({
+                                            ...prev,
+                                            layout_schema: {
+                                                ...(prev.layout_schema || {}),
+                                                image_x: clampedX,
+                                                image_y: clampedY,
+                                            },
+                                        }));
+                                    }
+                                };
+
+                                return (
+                                    <div className="mt-3 p-3.5 sm:p-4 rounded-xl bg-zinc-50/90 dark:bg-zinc-900/90 border border-zinc-200/80 dark:border-zinc-800 space-y-3.5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-200/60 dark:border-zinc-800">
+                                            <div className="flex items-center gap-2">
+                                                <Sliders className="w-3.5 h-3.5 text-[#0AB600]" />
+                                                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wide">
+                                                    Posisi &amp; Fokus Gambar
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[11px] font-mono font-semibold text-[#0AB600] px-2 py-0.5 rounded-md bg-[#0AB600]/10 border border-[#0AB600]/20">
+                                                    X: {curX}% &bull; Y: {curY}%
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updatePos(50, 50)}
+                                                    className="px-2 py-1 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                                                    title="Reset posisi foto ke tengah"
+                                                >
+                                                    <RotateCcw className="w-2.5 h-2.5" />
+                                                    <span>Reset</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                            {/* Interactive Visual Box */}
+                                            <div className="md:col-span-4 flex flex-col items-center">
+                                                <div 
+                                                    className="w-full h-32 rounded-xl overflow-hidden border border-dashed border-[#0AB600]/50 relative bg-zinc-950 select-none cursor-crosshair group shadow-inner"
+                                                    onClick={(e) => {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        const xPercent = Math.round(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+                                                        const yPercent = Math.round(Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)));
+                                                        updatePos(xPercent, yPercent);
+                                                    }}
+                                                >
+                                                    <img 
+                                                        src={activeImgSrc} 
+                                                        alt="Reposition Preview" 
+                                                        className="w-full h-full object-cover transition-all pointer-events-none" 
+                                                        style={{ objectPosition: `${curX}% ${curY}%` }}
+                                                    />
+                                                    <div 
+                                                        className="absolute w-5 h-5 -ml-2.5 -mt-2.5 rounded-full border-2 border-white shadow-lg pointer-events-none flex items-center justify-center bg-[#0AB600]/90 ring-2 ring-black/40"
+                                                        style={{ left: `${curX}%`, top: `${curY}%` }}
+                                                    >
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+                                                    </div>
+                                                    <div className="absolute bottom-1 right-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-xs text-[9px] font-medium text-white pointer-events-none flex items-center gap-1">
+                                                        <Crosshair className="w-2.5 h-2.5 text-[#0AB600]" />
+                                                        <span>Klik / Geser</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Sliders & Preset Buttons */}
+                                            <div className="md:col-span-8 space-y-3">
+                                                {/* Vertical Slider */}
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-zinc-300">
+                                                            <MoveVertical className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                                                            <span>Posisi Vertikal (Y)</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-bold text-zinc-600 dark:text-zinc-400">{curY}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="100" 
+                                                        step="1"
+                                                        value={curY}
+                                                        onChange={(e) => updatePos(curX, Number(e.target.value))}
+                                                        className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#0AB600]"
+                                                    />
+                                                    <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
+                                                        <span>0% (Atas)</span>
+                                                        <span>50% (Tengah)</span>
+                                                        <span>100% (Bawah)</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Horizontal Slider */}
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-zinc-300">
+                                                            <MoveHorizontal className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                                                            <span>Posisi Horizontal (X)</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-bold text-zinc-600 dark:text-zinc-400">{curX}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="100" 
+                                                        step="1"
+                                                        value={curX}
+                                                        onChange={(e) => updatePos(Number(e.target.value), curY)}
+                                                        className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#0AB600]"
+                                                    />
+                                                    <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
+                                                        <span>0% (Kiri)</span>
+                                                        <span>50% (Tengah)</span>
+                                                        <span>100% (Kanan)</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Presets */}
+                                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                                    <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mr-1">
+                                                        Preset:
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updatePos(curX, 15)}
+                                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                            curY <= 25 ? 'bg-[#0AB600] text-white border-[#0AB600] shadow-xs' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750'
+                                                        }`}
+                                                    >
+                                                        <ArrowUp className="w-3 h-3" />
+                                                        <span>Atas</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updatePos(50, 50)}
+                                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                            curX === 50 && curY === 50 ? 'bg-[#0AB600] text-white border-[#0AB600] shadow-xs' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750'
+                                                        }`}
+                                                    >
+                                                        <Crosshair className="w-3 h-3" />
+                                                        <span>Tengah</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updatePos(curX, 85)}
+                                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                            curY >= 75 ? 'bg-[#0AB600] text-white border-[#0AB600] shadow-xs' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750'
+                                                        }`}
+                                                    >
+                                                        <ArrowDown className="w-3 h-3" />
+                                                        <span>Bawah</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updatePos(15, curY)}
+                                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                            curX <= 25 ? 'bg-[#0AB600] text-white border-[#0AB600] shadow-xs' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750'
+                                                        }`}
+                                                    >
+                                                        <ArrowLeft className="w-3 h-3" />
+                                                        <span>Kiri</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updatePos(85, curY)}
+                                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                            curX >= 75 ? 'bg-[#0AB600] text-white border-[#0AB600] shadow-xs' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-750'
+                                                        }`}
+                                                    >
+                                                        <ArrowRight className="w-3 h-3" />
+                                                        <span>Kanan</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* 4. Content Sections (Manfaat, Spesifikasi, Problem-Solution) */}
@@ -2951,10 +3193,12 @@ export default function Form({ project = null, categories = [] }) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-3.5 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-dashed border-zinc-300 dark:border-zinc-800 text-center justify-center flex-col py-8">
-                                        <div className="w-14 h-14 rounded-full bg-[#0AB600]/10 text-[#0AB600] flex items-center justify-center">
-                                            <GraduationCap className="w-7 h-7" />
-                                        </div>
+                                    <div className="flex items-center gap-3 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-dashed border-zinc-300 dark:border-zinc-800 text-center justify-center flex-col py-8">
+                                        <img
+                                            src="/assets/img/icon/notfound.png"
+                                            alt="Belum Ada Peneliti Dipilih"
+                                            className="w-24 sm:w-28 h-auto object-contain mx-auto mb-1 drop-shadow-xs"
+                                        />
                                         <div className="space-y-1 max-w-md">
                                             <div className="text-sm font-bold text-slate-800 dark:text-zinc-200">
                                                 {language === 'en' ? 'No Team Members Selected' : 'Belum Ada Peneliti Dipilih'}
@@ -3977,6 +4221,20 @@ export default function Form({ project = null, categories = [] }) {
                             </form>
                         </div>
                     </div>
+                )}
+
+                {/* Version History & Rollback Modal */}
+                {isEditing && (
+                    <VersionHistoryModal
+                        isOpen={isVersionModalOpen}
+                        onClose={() => setIsVersionModalOpen(false)}
+                        modelType="project"
+                        modelId={project?.slug || project?.id}
+                        modelName={project?.name || project?.title}
+                        onRollbackSuccess={() => {
+                            router.reload();
+                        }}
+                    />
                 )}
 
             </div>

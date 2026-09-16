@@ -4,6 +4,7 @@ import { AppProvider, useApp } from '../Context/AppContext';
 import Navbar from '../Components/Navbar';
 import HeroSection from '../Components/HeroSection';
 import ProjectShowcaseSection from '../Components/ProjectShowcaseSection';
+import CatalogFeatureSection from '../Components/CatalogFeatureSection';
 import NaraSection from '../Components/NaraSection';
 import AboutSection from '../Components/AboutSection';
 import PrinciplesSection from '../Components/PrinciplesSection';
@@ -38,6 +39,9 @@ function LandingContent({ publishedProjects = [], stats = {} }) {
 
                     {/* Published Projects Showcase Section */}
                     <ProjectShowcaseSection projects={publishedProjects} />
+
+                    {/* Interactive Public Catalog Feature Section */}
+                    <CatalogFeatureSection stats={stats} />
 
                     {/* NARA AI Assistant Introduction Section */}
                     <NaraSection />

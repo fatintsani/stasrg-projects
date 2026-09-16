@@ -1,7 +1,7 @@
 @extends('emails.layouts.master')
 
 @section('title', 'Pendaftaran Akun Berhasil')
-@section('header_subtitle', 'Notifikasi Registrasi Pengguna STASIKATOR')
+@section('header_subtitle', 'Notifikasi Registrasi Pengguna STAS RG Projects')
 
 @section('content')
     <div class="badge-pill badge-pending" style="margin-bottom: 12px;">
