@@ -18,7 +18,34 @@ class GoogleAuthController extends Controller
      */
     public function redirect(): RedirectResponse
     {
-        return Socialite::driver('google')->redirect();
+        $clientId = config('services.google.client_id');
+        $clientSecret = config('services.google.client_secret');
+
+        if (empty($clientId) || empty($clientSecret)) {
+            return redirect()->route('login')->with('warning', 'Login dengan Google sedang dalam tahap konfigurasi / pengembangan API.');
+        }
+
+        try {
+            return Socialite::driver('google')->redirect();
+        } catch (Throwable $e) {
+            Log::warning('Google OAuth redirect error: '.$e->getMessage());
+
+            return redirect()->route('login')->with('warning', 'Layanan Login Google sedang dalam pengembangan atau belum dapat diakses.');
+        }
+    }
+
+    /**
+     * Redirect to Telkom University SSO gateway.
+     */
+    public function teluSsoRedirect(): RedirectResponse
+    {
+        $ssoClientId = env('TELU_SSO_CLIENT_ID');
+
+        if (empty($ssoClientId)) {
+            return redirect()->route('login')->with('warning', 'Login dengan SSO Telkom University sedang dalam tahap integrasi & pengembangan.');
+        }
+
+        return redirect()->route('login')->with('warning', 'Integrasi SSO Telkom University sedang dalam tahap pengembangan.');
     }
 
     /**

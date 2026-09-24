@@ -53,6 +53,7 @@ class HandleInertiaRequests extends Middleware
                 'status' => fn () => $request->session()->get('status'),
                 'message' => fn () => $request->session()->get('message'),
                 'success' => fn () => $request->session()->get('success'),
+                'warning' => fn () => $request->session()->get('warning'),
                 'error' => fn () => $request->session()->get('error'),
             ],
             'app_font' => SystemSetting::get('app_font', 'plus-jakarta-sans'),

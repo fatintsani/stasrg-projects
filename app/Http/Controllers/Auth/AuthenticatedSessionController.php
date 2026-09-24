@@ -23,7 +23,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Login');
+        return Inertia::render('Auth/Login', [
+            'hasGoogleAuth' => ! empty(config('services.google.client_id')) && ! empty(config('services.google.client_secret')),
+            'hasTeluSso' => ! empty(env('TELU_SSO_CLIENT_ID')) && ! empty(env('TELU_SSO_CLIENT_SECRET')),
+        ]);
     }
 
     /**

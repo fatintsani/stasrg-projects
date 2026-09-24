@@ -229,7 +229,49 @@ class AnalyticsController extends Controller
                 ];
             });
 
-        // --- 6. LEADERBOARDS (PROYEK PALING BANYAK) ---
+        // --- 6. LEADERBOARDS & PROJECT QR BREAKDOWN ---
+        // Project QR Performance Breakdown (All projects with metrics in current period)
+        $projectsQrBreakdown = Project::whereIn('id', $userProjectIds ?: [0])
+            ->withCount([
+                'analytics as scans_count' => function ($q) use ($startDate, $endDate) {
+                    $q->where('event_type', ProjectAnalytic::EVENT_QR_SCAN)
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                },
+                'analytics as prev_scans_count' => function ($q) use ($prevStartDate, $prevEndDate) {
+                    $q->where('event_type', ProjectAnalytic::EVENT_QR_SCAN)
+                        ->whereBetween('created_at', [$prevStartDate, $prevEndDate]);
+                },
+                'analytics as views_count' => function ($q) use ($startDate, $endDate) {
+                    $q->where('event_type', ProjectAnalytic::EVENT_SHOWCASE_VIEW)
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                },
+            ])
+            ->orderByDesc('scans_count')
+            ->get(['id', 'name', 'title', 'category', 'slug', 'status', 'main_image'])
+            ->map(function ($proj) use ($totalScans, $calcGrowth) {
+                $scans = (int) $proj->scans_count;
+                $prevScans = (int) $proj->prev_scans_count;
+                $views = (int) $proj->views_count;
+                $share = $totalScans > 0 ? round(($scans / $totalScans) * 100, 1) : 0;
+                $conversion = $views > 0 ? round(($scans / $views) * 100, 1) : 0;
+
+                return [
+                    'id' => $proj->id,
+                    'name' => $proj->name,
+                    'title' => $proj->title,
+                    'category' => $proj->category,
+                    'slug' => $proj->slug,
+                    'status' => $proj->status,
+                    'main_image' => $proj->main_image ? asset('storage/'.$proj->main_image) : null,
+                    'scans_count' => $scans,
+                    'prev_scans_count' => $prevScans,
+                    'views_count' => $views,
+                    'share_percent' => $share,
+                    'conversion_rate' => $conversion,
+                    'growth' => $calcGrowth($scans, $prevScans),
+                ];
+            });
+
         // Top Most Viewed
         $topViewedProjects = Project::whereIn('id', $userProjectIds ?: [0])
             ->withCount(['analytics as views_count' => function ($q) use ($startDate, $endDate) {
@@ -262,6 +304,40 @@ class AnalyticsController extends Controller
             ->orderByDesc('downloads_count')
             ->take(5)
             ->get(['id', 'name', 'title', 'category', 'slug', 'status', 'main_image']);
+
+        // --- 7. DAY-OF-WEEK DISTRIBUTION (Senin - Minggu) ---
+        $dayOfWeekLabels = [
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+            7 => 'Minggu',
+        ];
+        $dayOfWeekData = [];
+        foreach ($dayOfWeekLabels as $num => $dayName) {
+            $dayOfWeekData[$num] = [
+                'day' => $num,
+                'label' => $dayName,
+                'scans' => 0,
+                'views' => 0,
+                'total' => 0,
+            ];
+        }
+
+        $allPeriodRecords = (clone $baseQuery)->get(['event_type', 'created_at']);
+        foreach ($allPeriodRecords as $rec) {
+            $dayNum = (int) $rec->created_at->dayOfWeekIso; // 1 (Mon) - 7 (Sun)
+            if (isset($dayOfWeekData[$dayNum])) {
+                if ($rec->event_type === ProjectAnalytic::EVENT_QR_SCAN) {
+                    $dayOfWeekData[$dayNum]['scans']++;
+                } else {
+                    $dayOfWeekData[$dayNum]['views']++;
+                }
+                $dayOfWeekData[$dayNum]['total']++;
+            }
+        }
 
         // --- 7. RECENT LIVE SCAN & VIEW EVENTS FEED ---
         $recentEvents = (clone $baseQuery)
@@ -314,6 +390,8 @@ class AnalyticsController extends Controller
                 'browsers' => $browserBreakdown,
             ],
             'locations' => $locationBreakdown,
+            'projects_qr_breakdown' => $projectsQrBreakdown,
+            'day_of_week' => array_values($dayOfWeekData),
             'leaderboards' => [
                 'most_viewed' => $topViewedProjects,
                 'most_scanned' => $topScannedProjects,

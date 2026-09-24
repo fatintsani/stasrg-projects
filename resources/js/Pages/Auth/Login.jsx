@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useForm } from '@inertiajs/react';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Fingerprint, LogIn, ArrowRight, ShieldCheck, AlertCircle, Clock, Info } from 'lucide-react';
+import { Link, useForm, usePage } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, Eye, EyeOff, Fingerprint, LogIn, ArrowRight, ShieldCheck, AlertCircle, Clock, Info, AlertTriangle, X, Sparkles } from 'lucide-react';
 import { AppProvider, useApp } from '../../Context/AppContext';
 import AuthLayout from '../../Components/AuthLayout';
 import BiometricModal from '../../Components/BiometricModal';
@@ -29,10 +29,19 @@ function GoogleLogo({ className = "w-4 h-4" }) {
     );
 }
 
-function LoginFormContent({ status }) {
+function LoginFormContent({ status, hasGoogleAuth = false, hasTeluSso = false }) {
     const { t, language } = useApp();
+    const { flash } = usePage().props;
     const [showPassword, setShowPassword] = useState(false);
     const [isBiometricOpen, setIsBiometricOpen] = useState(false);
+    
+    // State for Feature In-Development Alert Modal
+    const [devAlert, setDevAlert] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        provider: '',
+    });
 
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
@@ -48,7 +57,29 @@ function LoginFormContent({ status }) {
     };
 
     const handleGoogleLogin = () => {
+        if (!hasGoogleAuth) {
+            setDevAlert({
+                isOpen: true,
+                title: 'Login Google Sedang Dalam Pengembangan',
+                message: 'Fitur autentikasi Single Sign-On menggunakan Akun Google saat ini sedang dalam tahap konfigurasi & integrasi API oleh Administrator. Silakan masuk menggunakan Email/Username dan Kata Sandi terdaftar Anda.',
+                provider: 'google',
+            });
+            return;
+        }
         window.location.href = '/auth/google/redirect';
+    };
+
+    const handleTeluSsoLogin = () => {
+        if (!hasTeluSso) {
+            setDevAlert({
+                isOpen: true,
+                title: 'SSO Telkom University Sedang Dalam Pengembangan',
+                message: 'Integrasi autentikasi Single Sign-On (SSO) Telkom University (iGracias / Office 365 Tel-U) sedang dalam tahap pengembangan & penghubungan gateway API resmi. Silakan masuk menggunakan kredensial akun STAS RG Anda.',
+                provider: 'telu',
+            });
+            return;
+        }
+        window.location.href = '/auth/telu-sso/redirect';
     };
 
     const handleBiometricSuccess = (res) => {
@@ -75,7 +106,7 @@ function LoginFormContent({ status }) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="w-full p-7 sm:p-9 rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800/80 transition-colors shadow-sm"
+                className="w-full p-7 sm:p-9 rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800/80 transition-colors shadow-sm relative"
             >
                 {/* Header inside Card */}
                 <div className="text-center mb-6 sm:mb-8">
@@ -92,6 +123,17 @@ function LoginFormContent({ status }) {
                     <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs font-semibold text-amber-900 dark:text-amber-300 flex items-start gap-2.5">
                         <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <span className="leading-relaxed">{status}</span>
+                    </div>
+                )}
+
+                {/* Warning Flash Notice (e.g. from OAuth redirect fallback) */}
+                {flash?.warning && (
+                    <div className="mb-5 p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/80 text-xs font-medium text-amber-900 dark:text-amber-200 flex items-start gap-2.5 animate-in fade-in duration-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="leading-relaxed">
+                            <span className="font-bold">Pemberitahuan Sistem: </span>
+                            {flash.warning}
+                        </div>
                     </div>
                 )}
 
@@ -121,26 +163,43 @@ function LoginFormContent({ status }) {
                     </div>
                 )}
 
-                {/* Quick Social & Biometric Logins */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6">
+                {/* Quick Social, SSO & Biometric Logins */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-6">
                     {/* Google Sign In */}
                     <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/90 text-slate-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 transition-all cursor-pointer"
+                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/90 text-slate-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all cursor-pointer shadow-sm group"
+                        title="Masuk dengan Akun Google"
                     >
-                        <GoogleLogo className="w-4 h-4 shrink-0" />
+                        <GoogleLogo className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
                         <span className="truncate">Google</span>
+                    </button>
+
+                    {/* Telkom University SSO */}
+                    <button
+                        type="button"
+                        onClick={handleTeluSsoLogin}
+                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white dark:bg-zinc-900 hover:bg-rose-50/40 dark:hover:bg-rose-950/20 text-slate-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/90 dark:border-zinc-700/80 hover:border-rose-300 dark:hover:border-rose-800/60 transition-all cursor-pointer shadow-sm group"
+                        title="Masuk dengan SSO Telkom University"
+                    >
+                        <img
+                            src="/assets/img/telu_noname.png"
+                            alt="SSO Tel-U"
+                            className="w-4 h-4 object-contain shrink-0 transition-transform group-hover:scale-110"
+                        />
+                        <span className="truncate">SSO Tel-U</span>
                     </button>
 
                     {/* Passkey / Biometric Sign In */}
                     <button
                         type="button"
                         onClick={() => setIsBiometricOpen(true)}
-                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-[#0AB600]/10 hover:bg-[#0AB600]/15 dark:hover:bg-[#0AB600]/20 text-slate-900 dark:text-[#0AB600] text-xs font-semibold border border-[#0AB600]/30 transition-all cursor-pointer"
+                        className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#0AB600]/10 hover:bg-[#0AB600]/15 dark:hover:bg-[#0AB600]/20 text-[#089600] dark:text-[#0AB600] text-xs font-semibold border border-[#0AB600]/30 hover:border-[#0AB600]/50 transition-all cursor-pointer shadow-sm group"
+                        title="Masuk dengan Sidik Jari / Face ID"
                     >
-                        <Fingerprint className="w-4 h-4 text-[#0AB600] shrink-0" />
-                        <span className="truncate">Passkey / Touch ID</span>
+                        <Fingerprint className="w-4 h-4 text-[#0AB600] shrink-0 transition-transform group-hover:scale-110" />
+                        <span className="truncate">Passkey</span>
                     </button>
                 </div>
 
@@ -247,7 +306,7 @@ function LoginFormContent({ status }) {
                     <button
                         type="submit"
                         disabled={processing}
-                        className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-[#0AB600] hover:bg-[#089600] disabled:opacity-70 text-white text-xs sm:text-sm font-semibold border border-[#0AB600] transition-all duration-200 cursor-pointer mt-2"
+                        className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-[#0AB600] hover:bg-[#089600] disabled:opacity-70 text-white text-xs sm:text-sm font-semibold border border-[#0AB600] transition-all duration-200 cursor-pointer mt-2 shadow-sm"
                     >
                         <LogIn className="w-4 h-4" />
                         <span>{processing ? 'Memverifikasi...' : 'Masuk ke Platform'}</span>
@@ -276,14 +335,89 @@ function LoginFormContent({ status }) {
                 onSuccess={handleBiometricSuccess}
                 userEmail={data.email}
             />
+
+            {/* Feature In-Development Alert Modal */}
+            <AnimatePresence>
+                {devAlert.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setDevAlert({ ...devAlert, isOpen: false })}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                        />
+
+                        {/* Modal Box */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ type: 'spring', duration: 0.3 }}
+                            className="relative w-full max-w-md p-6 bg-white dark:bg-[#18181B] rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl z-10 overflow-hidden"
+                        >
+                            {/* Decorative background glow */}
+                            <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 flex items-center justify-center shrink-0">
+                                        {devAlert.provider === 'telu' ? (
+                                            <img
+                                                src="/assets/img/telu_noname.png"
+                                                alt="Telkom University"
+                                                className="w-7 h-7 object-contain"
+                                            />
+                                        ) : (
+                                            <GoogleLogo className="w-6 h-6" />
+                                        )}
+                                    </div>
+                                    <div>
+        
+                                        <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                                            {devAlert.title}
+                                        </h3>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setDevAlert({ ...devAlert, isOpen: false })}
+                                    className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 bg-zinc-50 dark:bg-zinc-900/60 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
+                                {devAlert.message}
+                            </p>
+
+                            <div className="flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setDevAlert({ ...devAlert, isOpen: false })}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-[#0AB600] hover:bg-[#089600] text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm"
+                                >
+                                    Saya Mengerti, Gunakan Kredensial Biasa
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </AuthLayout>
     );
 }
 
-export default function Login({ status }) {
+export default function Login({ status, hasGoogleAuth, hasTeluSso }) {
     return (
         <AppProvider>
-            <LoginFormContent status={status} />
+            <LoginFormContent
+                status={status}
+                hasGoogleAuth={hasGoogleAuth}
+                hasTeluSso={hasTeluSso}
+            />
         </AppProvider>
     );
 }

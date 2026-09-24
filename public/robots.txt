@@ -1,2 +1,27 @@
 User-agent: *
-Disallow:
+Disallow: /dashboard
+Disallow: /settings*
+Disallow: /users*
+Disallow: /activity-logs*
+Disallow: /analytics*
+Disallow: /media-library*
+Disallow: /templates*
+Disallow: /support-tickets*
+Disallow: /admin*
+Disallow: /ai-assistant*
+Disallow: /auth/passkey*
+Disallow: /reset-password*
+Disallow: /forgot-password*
+
+Allow: /
+Allow: /katalog
+Allow: /catalog
+Allow: /showcase*
+Allow: /riset*
+Allow: /team
+Allow: /nara
+Allow: /support
+Allow: /documentation
+Allow: /api-docs
+Allow: /privacy
+Allow: /terms

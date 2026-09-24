@@ -7,6 +7,7 @@ use App\Mail\AdminNewUserAlertMail;
 use App\Mail\UserRegisteredMail;
 use App\Models\AdminNotification;
 use App\Models\User;
+use App\Services\WebhookNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -100,6 +101,13 @@ class RegisteredUserController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::warning('Failed to create admin notification for new user: '.$e->getMessage());
+        }
+
+        // Trigger External Webhook Notification (Discord / Telegram / Generic)
+        try {
+            WebhookNotifier::notifyUserRegistration($user);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to dispatch webhook for new user registration: '.$e->getMessage());
         }
 
         // Do NOT auto-login pending user

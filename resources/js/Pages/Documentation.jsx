@@ -739,43 +739,75 @@ GEMINI_DEFAULT_MODEL=gemini-3.6-flash`}
                                     {/* ═══════ 13. API REFERENCE ═══════ */}
                                     <DocSection id="api-reference" icon={Terminal} title="13. Referensi API & Endpoint Developer" badge="DEV SPEC">
                                         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                            Dokumentasi rute utama dan endpoint data yang tersedia pada platform:
+                                            Platform CoE STAS-RG menyediakan antarmuka <strong>Public REST API v1</strong> terbuka untuk integrasi data riset, pencarian terprogram, dan direktori peneliti.
                                         </p>
+
+                                        {/* Interactive Portal Banner CTA */}
+                                        <div className="p-4 rounded-2xl bg-[#0AB600]/10 border border-[#0AB600]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-[#0AB600] animate-pulse"></span>
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Portal Dokumentasi API Interaktif & Live Console</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                                                    Coba endpoint secara live langsung di browser dan dapatkan cuplikan kode cURL, JavaScript, Python, PHP, dan Go.
+                                                </p>
+                                            </div>
+                                            <Link
+                                                href="/api-docs"
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0AB600] hover:bg-[#089600] text-white text-xs font-bold transition-all shadow-md shadow-[#0AB600]/25 shrink-0"
+                                            >
+                                                <span>Buka Interactive API Console</span>
+                                                <ArrowRight className="w-3.5 h-3.5" />
+                                            </Link>
+                                        </div>
 
                                         <div className="space-y-2">
                                             <ApiEndpoint
                                                 method="GET"
-                                                path="/qr/{slug}"
-                                                description="Gateway pelacakan scan QR expo publik yang mencatat metrik dan me-redirect pengunjung ke showcase proyek."
+                                                path="/api/v1/projects"
+                                                description="Mengambil daftar inovasi & proyek riset terpublikasi lengkap dengan filter kategori, pencarian kata kunci, dan penomoran halaman."
                                                 params={[
-                                                    { name: 'slug', type: 'string', desc: 'Identifier unik slug proyek riset' }
+                                                    { name: 'search', type: 'string', desc: 'Kata kunci pencarian bebas' },
+                                                    { name: 'category', type: 'string', desc: 'Filter kategori riset spesifik' },
+                                                    { name: 'page', type: 'integer', desc: 'Nomor halaman (default: 1)' },
+                                                    { name: 'per_page', type: 'integer', desc: 'Jumlah data per halaman (default: 10, max: 50)' }
                                                 ]}
-                                                response={`HTTP/1.1 302 Found\nLocation: /projects/iot-smart-agriculture`}
+                                                response={`{\n  "success": true,\n  "message": "Published research projects retrieved successfully.",\n  "data": [\n    {\n      "id": 1,\n      "name": "Autonomous Hydroponic Greenhouse",\n      "slug": "autonomous-hydroponic-greenhouse-monitoring",\n      "category": "Smart Agriculture"\n    }\n  ],\n  "meta": { "total": 28, "current_page": 1 }\n}`}
                                             />
 
                                             <ApiEndpoint
-                                                method="POST"
-                                                path="/support"
-                                                description="Mengirimkan tiket permohonan bantuan publik dan memicu antrean email 2-arah."
+                                                method="GET"
+                                                path="/api/v1/projects/{slug}"
+                                                description="Mengambil rincian data lengkap inovasi riset, spesifikasi teknis, keunggulan, tim peneliti, dan tautan QR."
                                                 params={[
-                                                    { name: 'name', type: 'string', desc: 'Nama lengkap pengirim' },
-                                                    { name: 'email', type: 'string', desc: 'Alamat email valid' },
-                                                    { name: 'subject', type: 'string', desc: 'Judul subjek tiket' },
-                                                    { name: 'category', type: 'string', desc: 'general | technical | feature | bug' },
-                                                    { name: 'message', type: 'string', desc: 'Isi lengkap pesan tiket' },
+                                                    { name: 'slug', type: 'string', desc: 'Slug URL unik proyek riset' }
                                                 ]}
-                                                response={`{\n  "status": "success",\n  "ticket_number": "STAS-20260915-A1B2",\n  "message": "Tiket Anda berhasil dikirim."\n}`}
+                                                response={`{\n  "success": true,\n  "data": {\n    "name": "Autonomous Hydroponic Greenhouse",\n    "specifications": ["ESP32", "LoRaWAN 915MHz"],\n    "benefits": ["Efisiensi 40%"]\n  }\n}`}
                                             />
 
                                             <ApiEndpoint
-                                                method="POST"
-                                                path="/admin/support-tickets/{id}/reply"
-                                                description="Mengirimkan balasan email resmi dari admin ke pengirim tiket dan memperbarui status tiket."
+                                                method="GET"
+                                                path="/api/v1/categories"
+                                                description="Mengambil daftar bidang fokus riset beserta jumlah proyek yang terpublikasi."
+                                                response={`{\n  "success": true,\n  "data": [\n    { "name": "Smart Agriculture", "projects_count": 12 },\n    { "name": "IoT & Embedded Systems", "projects_count": 8 }\n  ]\n}`}
+                                            />
+
+                                            <ApiEndpoint
+                                                method="GET"
+                                                path="/api/v1/researchers"
+                                                description="Mengambil daftar profil peneliti aktif, dosen pembimbing, dan afiliasi laboratorium."
                                                 params={[
-                                                    { name: 'message', type: 'string', desc: 'Teks balasan email resmi' },
-                                                    { name: 'status', type: 'string', desc: 'open | in_progress | resolved | closed' },
+                                                    { name: 'search', type: 'string', desc: 'Cari nama atau NIP peneliti' }
                                                 ]}
-                                                response={`{\n  "status": "success",\n  "message": "Balasan email berhasil dikirim ke pengirim tiket."\n}`}
+                                                response={`{\n  "success": true,\n  "data": [\n    {\n      "id": 1,\n      "name": "Dr. Fatin Tsani, S.T., M.T.",\n      "lab_affiliation": "Smart Sensing Lab"\n    }\n  ]\n}`}
+                                            />
+
+                                            <ApiEndpoint
+                                                method="GET"
+                                                path="/api/v1/stats"
+                                                description="Mengambil statistik agregasi seluruh proyek riset, kategori, dan peneliti di CoE STAS-RG."
+                                                response={`{\n  "success": true,\n  "data": {\n    "total_published_projects": 28,\n    "total_active_researchers": 14,\n    "total_categories": 5\n  }\n}`}
                                             />
                                         </div>
                                     </DocSection>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     FolderKanban,
     Search,
@@ -14,22 +14,154 @@ import {
     CheckCircle2,
     Layers,
     Tag,
-    ExternalLink
+    ExternalLink,
+    X,
+    CornerDownLeft
 } from 'lucide-react';
 import { useApp } from '../Context/AppContext';
+import { stripHtml } from '../Utils/text';
 
-export default function CatalogFeatureSection({ stats = {} }) {
+export default function CatalogFeatureSection({ stats = {}, projects = [] }) {
     const { language } = useApp();
     const isId = language !== 'en';
 
-    const [activeTab, setActiveTab] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const sampleCategories = [
-        { id: 'Smart Agriculture', name: isId ? 'Smart Agriculture' : 'Smart Agriculture', count: 12, color: 'emerald' },
-        { id: 'IoT & Embedded', name: isId ? 'IoT & Embedded Systems' : 'IoT & Embedded Systems', count: 8, color: 'blue' },
-        { id: 'AI & Data Science', name: isId ? 'AI & Machine Learning' : 'AI & Machine Learning', count: 6, color: 'purple' },
-        { id: 'Green Tech & Energy', name: isId ? 'Green Energy' : 'Green Energy', count: 4, color: 'amber' },
+    // Dynamically derive ONLY existing categories from actual published projects
+    const availableCategories = useMemo(() => {
+        if (projects && projects.length > 0) {
+            const counts = {};
+            projects.forEach((p) => {
+                const cat = (p.category || '').trim();
+                if (cat) {
+                    counts[cat] = (counts[cat] || 0) + 1;
+                }
+            });
+
+            const list = Object.entries(counts).map(([name, count]) => ({
+                id: name,
+                name: name,
+                count: count,
+            }));
+
+            if (list.length > 0) {
+                return list;
+            }
+        }
+
+        return [{ id: 'Smart Agriculture', name: 'Smart Agriculture', count: 1 }];
+    }, [projects]);
+
+    const [selectedCategory, setSelectedCategory] = useState(() => {
+        if (projects && projects.length > 0 && projects[0].category) {
+            return projects[0].category;
+        }
+        return 'Smart Agriculture';
+    });
+
+    useEffect(() => {
+        if (availableCategories.length > 0) {
+            const exists = availableCategories.some((c) => c.id === selectedCategory);
+            if (!exists) {
+                setSelectedCategory(availableCategories[0].id);
+            }
+        }
+    }, [availableCategories, selectedCategory]);
+
+    // Fallback sample catalog entries for rich live demonstration
+    const fallbackProjects = [
+        {
+            id: 101,
+            name: 'Autonomous Hydroponic Greenhouse Monitoring with LoRa & AI',
+            slug: 'autonomous-hydroponic-greenhouse-monitoring',
+            category: 'Smart Agriculture',
+            trl: 'TRL 7 • Terverifikasi',
+            desc: isId
+                ? 'Sistem kendali iklim mikro presisi dan prediksi nutrisi tanaman secara mandiri berbasis sensor terdistribusi.'
+                : 'Precision microclimate control system with automated nutrient prediction based on distributed IoT sensors.'
+        },
+        {
+            id: 102,
+            name: 'Industrial LoRaWAN Gateway & SCADA Sensor Mesh Node',
+            slug: 'industrial-lorawan-gateway-scada',
+            category: 'IoT & Embedded Systems',
+            trl: 'TRL 8 • Siap Industri',
+            desc: isId
+                ? 'Gateway multi-kanal untuk telemetri industri dengan enkripsi AES-128 dan efisiensi konsumsi daya ultra rendah.'
+                : 'Multi-channel gateway for industrial telemetry with AES-128 encryption and ultra-low power consumption.'
+        },
+        {
+            id: 103,
+            name: 'Computer Vision Defect Detection & Smart Sorter for Manufacturing',
+            slug: 'cv-defect-detection-smart-sorter',
+            category: 'AI & Machine Learning',
+            trl: 'TRL 6 • Uji Coba Lapangan',
+            desc: isId
+                ? 'Deteksi anomali cacat permukaan produk manufaktur real-time berbasis Deep Convolutional Neural Network.'
+                : 'Real-time manufacturing surface defect anomaly detection powered by Deep Convolutional Neural Networks.'
+        },
+        {
+            id: 104,
+            name: 'Hybrid Micro-Hydro & Solar MPPT Energy Harvester',
+            slug: 'hybrid-micro-hydro-solar-mppt',
+            category: 'Green Energy',
+            trl: 'TRL 7 • Teruji di Lapangan',
+            desc: isId
+                ? 'Konverter energi hibrida terbarukan dengan algoritma Maximum Power Point Tracking adaptif untuk kawasan 3T.'
+                : 'Renewable hybrid energy converter with adaptive MPPT algorithms designed for remote rural monitoring.'
+        }
     ];
+
+    // Combine real projects with fallbacks
+    const allAvailableProjects = useMemo(() => {
+        if (projects && projects.length > 0) {
+            return projects.map((p) => ({
+                id: p.id,
+                name: p.name || p.title,
+                slug: p.slug,
+                category: p.category || 'Smart Agriculture',
+                trl: 'TRL 7 • Terverifikasi',
+                desc: stripHtml(p.description || p.subtitle) || (isId ? 'Dokumentasi riset & inovasi CoE STAS-RG.' : 'CoE STAS-RG research & innovation documentation.')
+            }));
+        }
+        return fallbackProjects;
+    }, [projects, isId]);
+
+    // Live filtered project preview based on active state
+    const currentPreviewProject = useMemo(() => {
+        let filtered = allAvailableProjects;
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            filtered = filtered.filter(
+                (p) =>
+                    p.name.toLowerCase().includes(q) ||
+                    p.category.toLowerCase().includes(q) ||
+                    p.desc.toLowerCase().includes(q)
+            );
+        } else if (selectedCategory && selectedCategory !== 'all') {
+            const catMatches = filtered.filter(
+                (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
+            );
+            if (catMatches.length > 0) {
+                filtered = catMatches;
+            }
+        }
+
+        return filtered[0] || (fallbackProjects.find(p => p.category.toLowerCase() === selectedCategory.toLowerCase()) || fallbackProjects[0]);
+    }, [allAvailableProjects, searchQuery, selectedCategory]);
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        const queryParams = new URLSearchParams();
+        if (searchQuery.trim()) {
+            queryParams.set('search', searchQuery.trim());
+        }
+        if (selectedCategory && selectedCategory !== 'all') {
+            queryParams.set('category', selectedCategory);
+        }
+        router.visit(`/katalog?${queryParams.toString()}`);
+    };
 
     const capabilities = [
         {
@@ -53,15 +185,15 @@ export default function CatalogFeatureSection({ stats = {} }) {
         <section id="katalog-section" className="py-14 sm:py-24 relative overflow-hidden bg-[#FAFBFD] dark:bg-[#070D18] border-b border-zinc-200/80 dark:border-zinc-800/80">
             {/* Ambient Background Lights */}
             <div className="absolute top-1/2 left-0 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-[#0AB600]/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-80 sm:w-120 h-80 sm:h-120 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-80 sm:w-120 h-80 sm:h-120 bg-[#0AB600]/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 
                 {/* Main Card Container */}
                 <div className="rounded-3xl bg-white dark:bg-[#0E1524] border border-zinc-200/80 dark:border-zinc-800/80 p-6 sm:p-10 lg:p-12 shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden relative">
                     
-                    {/* Decorative Top Gradient Line */}
-                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-emerald-500 via-[#0AB600] to-teal-400" />
+                    {/* Decorative Top Accent Line */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#0AB600]" />
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
                         
@@ -80,14 +212,14 @@ export default function CatalogFeatureSection({ stats = {} }) {
                                     {isId ? (
                                         <>
                                             Katalog Riset & Inovasi Publik <br />
-                                            <span className="text-transparent bg-clip-text bg-linear-to-r from-[#0AB600] to-teal-500">
+                                            <span className="text-[#0AB600]">
                                                 Interaktif dengan Faceted Search
                                             </span>
                                         </>
                                     ) : (
                                         <>
                                             Interactive Research Catalog <br />
-                                            <span className="text-transparent bg-clip-text bg-linear-to-r from-[#0AB600] to-teal-500">
+                                            <span className="text-[#0AB600]">
                                                 With Dynamic Faceted Filtering
                                             </span>
                                         </>
@@ -147,75 +279,117 @@ export default function CatalogFeatureSection({ stats = {} }) {
                         <div className="lg:col-span-5">
                             <div className="p-5 sm:p-6 rounded-2xl bg-linear-to-b from-zinc-50 to-zinc-100/60 dark:from-zinc-900/80 dark:to-zinc-950 border border-zinc-200/80 dark:border-zinc-800 shadow-inner space-y-4">
                                 
-                                {/* Mock Search Bar Header */}
-                                <div className="space-y-1.5">
+                                {/* Interactive Live Search Input Form */}
+                                <form onSubmit={handleSearchSubmit} className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-mono flex items-center gap-1.5">
-                                            <Search className="w-3.5 h-3.5 text-[#0AB600]" />
-                                            <span>Simulasi Filter Cepat</span>
+                                        <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-mono flex items-center gap-1.5">
+                                            <span>Filter Cepat</span>
                                         </span>
-                                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/50">
-                                            Live Search
+                                        <span className="text-[10px] font-bold text-[#0AB600] bg-[#0AB600]/10 px-2 py-0.5 rounded-md border border-[#0AB600]/20 flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-[#0AB600] animate-pulse" />
+                                            <span>Live Search</span>
                                         </span>
                                     </div>
-                                    <div className="relative">
+                                    <div className="relative flex items-center">
+                                        <Search className="w-4 h-4 text-zinc-400 absolute left-3 pointer-events-none" />
                                         <input
                                             type="text"
-                                            readOnly
-                                            value={isId ? 'Ketik nama peneliti, kategori, atau teknologi...' : 'Search researcher, category, or tech...'}
-                                            className="w-full pl-9 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-400 dark:text-zinc-400 cursor-pointer shadow-2xs"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder={isId ? 'Ketik nama peneliti, kategori, atau teknologi...' : 'Search researcher, category, or tech...'}
+                                            className="w-full pl-9 pr-10 py-2.5 text-xs bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded-xl text-slate-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#0AB600]/40 focus:border-[#0AB600] shadow-2xs transition-all"
                                         />
-                                        <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                                        {searchQuery ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute right-2.5 p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer"
+                                                title="Hapus pencarian"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="submit"
+                                                className="absolute right-2 p-1.5 rounded-lg bg-[#0AB600] text-white hover:bg-[#089600] transition-colors cursor-pointer shadow-xs"
+                                                title="Cari di katalog"
+                                            >
+                                                <ArrowRight className="w-3 h-3" />
+                                            </button>
+                                        )}
                                     </div>
-                                </div>
+                                </form>
 
                                 {/* Category Badges Interactive Preview */}
                                 <div className="space-y-2">
-                                    <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 block">
-                                        {isId ? 'Pilih Bidang Fokus Riset:' : 'Choose Research Focus:'}
-                                    </span>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 block">
+                                            {isId ? 'Pilih Bidang Fokus Riset:' : 'Choose Research Focus:'}
+                                        </span>
+                                    </div>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {sampleCategories.map((cat) => (
-                                            <Link
-                                                key={cat.id}
-                                                href={`/katalog?category=${encodeURIComponent(cat.id)}`}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-[#0AB600] dark:hover:bg-[#0AB600] text-slate-700 dark:text-zinc-200 hover:text-white dark:hover:text-white border border-zinc-200 dark:border-zinc-700 text-xs font-medium transition-all group shadow-2xs cursor-pointer"
-                                            >
-                                                <Tag className="w-3 h-3 text-[#0AB600] group-hover:text-white" />
-                                                <span>{cat.name}</span>
-                                            </Link>
-                                        ))}
+                                        {availableCategories.map((cat) => {
+                                            const isSelected = selectedCategory === cat.id && !searchQuery;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={cat.id}
+                                                    onClick={() => {
+                                                        setSelectedCategory(cat.id);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all group shadow-2xs cursor-pointer ${
+                                                        isSelected
+                                                            ? 'bg-[#0AB600] text-white border border-[#0AB600] shadow-md shadow-[#0AB600]/25'
+                                                            : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-[#0AB600] dark:hover:text-white border border-zinc-200 dark:border-zinc-700 hover:border-[#0AB600]/40'
+                                                    }`}
+                                                >
+                                                    <Tag className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-[#0AB600] group-hover:scale-110 transition-transform'}`} />
+                                                    <span>{cat.name}</span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
-                                {/* Live Mock Project Card Preview */}
-                                <Link
-                                    href="/katalog"
-                                    className="block p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 hover:border-[#0AB600] transition-all group shadow-xs"
-                                >
-                                    <div className="flex items-start justify-between gap-2 mb-2">
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-[#0AB600] border border-[#0AB600]/20">
-                                            Smart Agriculture
-                                        </span>
-                                        <span className="text-[10px] font-mono text-zinc-400">
-                                            TRL 7 • Terverifikasi
-                                        </span>
-                                    </div>
-                                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#0AB600] transition-colors leading-snug">
-                                        Autonomous Hydroponic Greenhouse Monitoring with LoRa & AI
-                                    </h4>
-                                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
-                                        Sistem kendali iklim mikro presisi dan prediksi nutrisi tanaman secara mandiri berbasis sensor terdistribusi.
-                                    </p>
-                                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-zinc-100 dark:border-zinc-700/60 text-[11px] font-semibold text-[#0AB600]">
-                                        <span>{isId ? 'Buka detail di katalog' : 'View in catalog'}</span>
-                                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                </Link>
+                                {/* Live Reactive Project Card Preview */}
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentPreviewProject.id || currentPreviewProject.slug}
+                                        initial={{ opacity: 0, y: 6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -6 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <Link
+                                            href={`/katalog?search=${encodeURIComponent(currentPreviewProject.name)}`}
+                                            className="block p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 hover:border-[#0AB600] dark:hover:border-[#0AB600] transition-all group shadow-xs"
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#0AB600]/10 text-[#0AB600] border border-[#0AB600]/20">
+                                                    {currentPreviewProject.category}
+                                                </span>
+                                                <span className="text-[10px] font-mono text-zinc-400">
+                                                    {currentPreviewProject.trl}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#0AB600] transition-colors leading-snug">
+                                                {currentPreviewProject.name}
+                                            </h4>
+                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                                                {currentPreviewProject.desc}
+                                            </p>
+                                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-zinc-100 dark:border-zinc-700/60 text-[11px] font-semibold text-[#0AB600]">
+                                                <span>{isId ? 'Buka pencarian ini di katalog' : 'Search this in catalog'}</span>
+                                                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                                            </div>
+                                        </Link>
+                                    </motion.div>
+                                </AnimatePresence>
 
                                 {/* Direct Counter Banner */}
-                                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
-                                    <span className="text-emerald-800 dark:text-emerald-300 font-medium">
+                                <div className="p-3 rounded-xl bg-[#0AB600]/10 border border-[#0AB600]/20 flex items-center justify-between text-xs">
+                                    <span className="text-slate-800 dark:text-zinc-200 font-medium">
                                         {isId ? 'Tersedia di penjelajah katalog lengkap:' : 'Available in the full catalog explorer:'}
                                     </span>
                                     <Link

@@ -15,7 +15,8 @@ import {
     Home,
     Compass,
     Layers,
-    Workflow
+    Workflow,
+    Terminal
 } from 'lucide-react';
 import { useApp } from '../Context/AppContext';
 
@@ -66,6 +67,7 @@ export default function Navbar() {
         { name: t.nav?.overview || 'Overview', href: '/#overview', id: 'overview', icon: Home },
         { name: 'Showcase', href: '/#projects-showcase', id: 'projects-showcase', icon: Layers },
         { name: 'NARA AI', href: '/nara', id: 'nara', icon: Bot, mobileOnly: true },
+        { name: 'API Docs', href: '/api-docs', id: 'api-docs', icon: Terminal, mobileOnly: true },
         { name: t.nav?.about || 'Tentang', href: '/#about', id: 'about', icon: Compass },
         { name: t.nav?.principles || 'Prinsip', href: '/#principles', id: 'principles', icon: Layers },
         { name: t.nav?.howItWorks || 'Cara Kerja', href: '/#how-it-works', id: 'how-it-works', icon: Workflow },

@@ -75,9 +75,8 @@ export default function Footer() {
         { name: t.nav.overview, href: '/#overview' },
         { name: language === 'en' ? 'Research Catalog' : 'Katalog Riset', href: '/katalog' },
         { name: 'NARA AI', href: '/nara' },
-        { name: t.nav.about, href: '/#about' },
-        { name: t.nav.principles, href: '/#principles' },
-        { name: t.nav.howItWorks, href: '/#how-it-works' },
+        { name: language === 'en' ? 'Documentation' : 'Dokumentasi', href: '/documentation' },
+        { name: language === 'en' ? 'REST API' : 'REST API', href: '/api-docs' },
         { name: t.nav?.support || 'Bantuan', href: '/support' },
         { name: t.nav.login, href: '/login' },
     ];

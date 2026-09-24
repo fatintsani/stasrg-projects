@@ -1560,4 +1560,84 @@ class ProjectController extends Controller
             return $member;
         }, $team));
     }
+
+    /**
+     * Display Annual Research Catalog Digest (PDF compilation & printable document).
+     */
+    public function annualDigest(Request $request): Response
+    {
+        $selectedYear = $request->input('year', now()->format('Y'));
+
+        $query = Project::query()->where('status', 'published');
+
+        if ($selectedYear !== 'all' && is_numeric($selectedYear)) {
+            $query->whereYear('created_at', (int) $selectedYear);
+        }
+
+        $projects = $query->latest('created_at')->get()->map(function ($project) {
+            return [
+                'id' => $project->id,
+                'name' => $project->name,
+                'slug' => $project->slug,
+                'category' => $project->category ?? 'Umum',
+                'title' => $project->title,
+                'subtitle' => $project->subtitle,
+                'description' => $project->description,
+                'main_image' => $project->main_image ? asset('storage/'.$project->main_image) : null,
+                'benefits' => $project->benefits,
+                'specifications' => $project->specifications,
+                'problem_solution' => $project->problem_solution,
+                'research_team' => $this->formatResearchTeamForPublic($project->research_team),
+                'partner_logos' => ! empty($project->partner_logos) && is_array($project->partner_logos)
+                    ? array_map(fn ($p) => str_starts_with($p, 'http') ? $p : asset('storage/'.$p), $project->partner_logos)
+                    : ($project->partner_logo ? [asset('storage/'.$project->partner_logo)] : []),
+                'qr_code_path' => $project->qr_code_path ? asset('storage/'.$project->qr_code_path) : null,
+                'project_url' => $project->project_url,
+                'footer_website' => $project->footer_website,
+                'created_at' => $project->created_at->translatedFormat('d F Y'),
+                'year' => $project->created_at->format('Y'),
+            ];
+        });
+
+        // Available years for filter
+        $availableYears = Project::where('status', 'published')
+            ->selectRaw('DISTINCT strftime("%Y", created_at) as year')
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        // Fallback for MySQL/MariaDB if strftime returned null
+        if (empty($availableYears)) {
+            $availableYears = Project::where('status', 'published')
+                ->selectRaw('DISTINCT YEAR(created_at) as year')
+                ->orderByDesc('year')
+                ->pluck('year')
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
+        if (empty($availableYears)) {
+            $availableYears = [(string) now()->year];
+        }
+
+        // Stats summary
+        $totalProjects = $projects->count();
+        $categoriesCount = $projects->pluck('category')->unique()->count();
+        $categoriesBreakdown = $projects->groupBy('category')->map->count()->toArray();
+
+        return Inertia::render('Admin/Projects/AnnualDigest', [
+            'projects' => $projects,
+            'selectedYear' => (string) $selectedYear,
+            'availableYears' => $availableYears,
+            'stats' => [
+                'total_projects' => $totalProjects,
+                'categories_count' => $categoriesCount,
+                'categories_breakdown' => $categoriesBreakdown,
+                'generated_at' => now()->translatedFormat('d F Y, H:i').' WIB',
+            ],
+        ]);
+    }
 }

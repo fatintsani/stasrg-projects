@@ -10,6 +10,7 @@ use App\Models\SupportTicket;
 use App\Models\SupportTicketReply;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\WebhookNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -126,6 +127,13 @@ class SupportTicketController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::warning('Failed to create admin notification for ticket: '.$e->getMessage());
+        }
+
+        // Trigger External Webhook Notification (Discord / Telegram / Generic)
+        try {
+            WebhookNotifier::notifyNewTicket($ticket);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to dispatch webhook for new support ticket: '.$e->getMessage());
         }
 
         if ($request->wantsJson() || $request->is('api/*')) {
@@ -364,6 +372,13 @@ class SupportTicketController extends Controller
                 'reply_id' => $reply->id,
             ]
         );
+
+        // Trigger External Webhook Notification
+        try {
+            WebhookNotifier::notifyTicketReply($ticket, $reply);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to dispatch webhook for ticket reply: '.$e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

@@ -57,6 +57,9 @@ import {
     FileArchive,
     HardDriveDownload,
     UploadCloud,
+    Bell,
+    Send,
+    MessageSquare,
 } from 'lucide-react';
 
 function IndonesiaFlag({ className = "w-4 h-3" }) {
@@ -88,7 +91,7 @@ function EnglishFlag({ className = "w-4 h-3" }) {
     );
 }
 
-export default function Settings({ user, passkeys = [], projectStats = {}, systemInfo = {}, aiSettings = {}, backupSummary = {}, appFont: initialAppFont = 'plus-jakarta-sans' }) {
+export default function Settings({ user, passkeys = [], projectStats = {}, systemInfo = {}, aiSettings = {}, webhookSettings = {}, backupSummary = {}, appFont: initialAppFont = 'plus-jakarta-sans' }) {
     const { theme, setTheme, language, setLanguage, appFont, setAppFont, t } = useApp();
     const s = t?.admin?.settings || {};
     const aiTrans = t?.aiSettings || {};
@@ -224,6 +227,95 @@ export default function Settings({ user, passkeys = [], projectStats = {}, syste
     const [isSavingAi, setIsSavingAi] = useState(false);
     const [isTestingAi, setIsTestingAi] = useState(false);
     const [aiTestResult, setAiTestResult] = useState(null);
+
+    // Webhook Configuration state (Discord / Telegram / Generic)
+    const [webhookEnabled, setWebhookEnabled] = useState(Boolean(webhookSettings?.enabled));
+    const [webhookType, setWebhookType] = useState(webhookSettings?.type || 'discord');
+    const [webhookUrl, setWebhookUrl] = useState(webhookSettings?.url || '');
+    const [telegramBotToken, setTelegramBotToken] = useState(webhookSettings?.masked_telegram_bot_token || '');
+    const [telegramChatId, setTelegramChatId] = useState(webhookSettings?.telegram_chat_id || '');
+    const [webhookEvents, setWebhookEvents] = useState(webhookSettings?.events || ['ticket_created', 'user_registered', 'ticket_replied']);
+    const [showTelegramBotToken, setShowTelegramBotToken] = useState(false);
+    const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+    const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+    const [webhookTestResult, setWebhookTestResult] = useState(null);
+
+    const toggleWebhookEvent = (eventName) => {
+        setWebhookEvents((prev) =>
+            prev.includes(eventName) ? prev.filter((e) => e !== eventName) : [...prev, eventName]
+        );
+    };
+
+    const handleSaveWebhookSettings = (e) => {
+        e.preventDefault();
+        setIsSavingWebhook(true);
+
+        const payload = {
+            enabled: webhookEnabled,
+            type: webhookType,
+            url: webhookUrl,
+            telegram_chat_id: telegramChatId,
+            events: webhookEvents,
+        };
+
+        if (telegramBotToken && !telegramBotToken.includes('••••')) {
+            payload.telegram_bot_token = telegramBotToken;
+        }
+
+        router.post('/settings/webhook', payload, {
+            preserveScroll: true,
+            onSuccess: () => {
+                showSuccess('Integrasi Webhook Disimpan', 'Konfigurasi Webhook notifikasi berhasil diperbarui.');
+                setIsSavingWebhook(false);
+            },
+            onError: (err) => {
+                showError('Gagal Menyimpan Webhook', Object.values(err)[0] || 'Terjadi kesalahan saat menyimpan pengaturan Webhook.');
+                setIsSavingWebhook(false);
+            },
+            onFinish: () => {
+                setIsSavingWebhook(false);
+            }
+        });
+    };
+
+    const handleTestWebhook = async () => {
+        setIsTestingWebhook(true);
+        setWebhookTestResult(null);
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        try {
+            const res = await fetch('/settings/webhook/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    type: webhookType,
+                    url: webhookUrl || null,
+                    telegram_bot_token: telegramBotToken && !telegramBotToken.includes('••••') ? telegramBotToken : null,
+                    telegram_chat_id: telegramChatId || null,
+                }),
+            });
+
+            const data = await res.json();
+            setWebhookTestResult(data);
+
+            if (data.success) {
+                showSuccess('Uji Coba Webhook Berhasil!', data.message || `Pesan tes berhasil dikirim (${data.latency_ms} ms)`);
+            } else {
+                showError('Uji Coba Webhook Gagal', data.message || 'Tidak dapat mengirim notifikasi ke webhook tujuan.');
+            }
+        } catch (err) {
+            setWebhookTestResult({ success: false, message: err.message });
+            showError('Koneksi Webhook Gagal', err.message);
+        } finally {
+            setIsTestingWebhook(false);
+        }
+    };
 
     // Synchronize profileName when user prop updates
     useEffect(() => {
@@ -1248,6 +1340,243 @@ export default function Settings({ user, passkeys = [], projectStats = {}, syste
                                                     <span><strong className="font-semibold">Solusi:</strong> {aiTestResult.hint}</span>
                                                 </div>
                                             )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+
+                        {/* Section: Integrasi Webhook Notifikasi Eksternal (Discord / Telegram / Generic) */}
+                        <div className="bg-white dark:bg-[#121824] p-5 sm:p-6 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-5">
+                            
+                            {/* Card Header */}
+                            <div className="flex items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800/80">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400">
+                                        <Bell className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <span>Integrasi Notifikasi Webhook</span>
+                                        </h3>
+                                        <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
+                                            Kirimkan notifikasi tiket bantuan dan pendaftaran user baru secara otomatis ke Discord channel, bot Telegram, atau custom webhook.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <span
+                                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 flex items-center gap-1.5 ${
+                                        webhookEnabled
+                                            ? 'bg-[#0AB600]/10 text-[#0AB600] border-[#0AB600]/30'
+                                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                                    }`}
+                                >
+                                    <span className={`w-1.5 h-1.5 rounded-full ${webhookEnabled ? 'bg-[#0AB600]' : 'bg-zinc-400'}`}></span>
+                                    {webhookEnabled ? 'Aktif' : 'Nonaktif'}
+                                </span>
+                            </div>
+
+                            <form onSubmit={handleSaveWebhookSettings} className="space-y-4">
+                                
+                                {/* Toggle Enable / Disable */}
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800">
+                                    <div className="space-y-0.5">
+                                        <label htmlFor="webhook_toggle" className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer">
+                                            Aktifkan Notifikasi Webhook Otomatis
+                                        </label>
+                                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                            Kirim payload real-time setiap kali ada tiket baru, balasan, atau registrasi user.
+                                        </p>
+                                    </div>
+                                    <input
+                                        id="webhook_toggle"
+                                        type="checkbox"
+                                        checked={webhookEnabled}
+                                        onChange={(e) => setWebhookEnabled(e.target.checked)}
+                                        className="w-4 h-4 rounded text-[#0AB600] focus:ring-[#0AB600] cursor-pointer"
+                                    />
+                                </div>
+
+                                {/* Platform Type */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                                        Platform / Tipe Webhook
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { id: 'discord', label: 'Discord Webhook' },
+                                            { id: 'telegram', label: 'Telegram Bot' },
+                                            { id: 'generic', label: 'Generic JSON' },
+                                        ].map((t) => (
+                                            <button
+                                                key={t.id}
+                                                type="button"
+                                                onClick={() => setWebhookType(t.id)}
+                                                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                                    webhookType === t.id
+                                                        ? 'bg-[#0AB600]/10 border-[#0AB600] text-[#0AB600] font-bold shadow-xs'
+                                                        : 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:border-zinc-300'
+                                                }`}
+                                            >
+                                                {t.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Discord / Generic URL Input */}
+                                {(webhookType === 'discord' || webhookType === 'generic') && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                                            {webhookType === 'discord' ? 'Discord Webhook URL' : 'Target Endpoint URL (POST)'}
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={webhookUrl}
+                                            onChange={(e) => setWebhookUrl(e.target.value)}
+                                            placeholder={webhookType === 'discord' ? 'https://discord.com/api/webhooks/...' : 'https://api.domainanda.com/webhook'}
+                                            className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Telegram Bot Inputs */}
+                                {webhookType === 'telegram' && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                                                Telegram Bot Token
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showTelegramBotToken ? 'text' : 'password'}
+                                                    value={telegramBotToken}
+                                                    onChange={(e) => setTelegramBotToken(e.target.value)}
+                                                    placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                                                    className="w-full px-3 py-2 pr-9 text-xs font-mono bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowTelegramBotToken(!showTelegramBotToken)}
+                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 cursor-pointer"
+                                                >
+                                                    {showTelegramBotToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                                                Telegram Chat ID / Channel ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={telegramChatId}
+                                                onChange={(e) => setTelegramChatId(e.target.value)}
+                                                placeholder="-100123456789 atau @channel_name"
+                                                className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Trigger Events Toggles */}
+                                <div className="space-y-2 pt-1">
+                                    <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                                        Pilih Peristiwa (Events) Notifikasi
+                                    </label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        {[
+                                            { id: 'ticket_created', label: 'Tiket Bantuan Baru' },
+                                            { id: 'user_registered', label: 'Pendaftaran Akun Baru' },
+                                            { id: 'ticket_replied', label: 'Balasan Pesan Tiket' },
+                                        ].map((ev) => {
+                                            const isSelected = webhookEvents.includes(ev.id);
+                                            return (
+                                                <label
+                                                    key={ev.id}
+                                                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition-colors ${
+                                                        isSelected
+                                                            ? 'bg-[#0AB600]/5 border-[#0AB600]/30 text-slate-900 dark:text-white font-medium'
+                                                            : 'bg-zinc-50 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-800 text-zinc-500'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => toggleWebhookEvent(ev.id)}
+                                                        className="w-3.5 h-3.5 rounded text-[#0AB600] focus:ring-[#0AB600]"
+                                                    />
+                                                    <span>{ev.label}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Buttons: Test & Save */}
+                                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleTestWebhook}
+                                        disabled={isTestingWebhook || isSavingWebhook}
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                    >
+                                        {isTestingWebhook ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                                <span>Menguji Webhook...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="w-4 h-4 text-blue-600" />
+                                                <span>Tes Kirim Webhook</span>
+                                            </>
+                                        )}
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isSavingWebhook || isTestingWebhook}
+                                        className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0AB600] hover:bg-[#089600] text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                    >
+                                        {isSavingWebhook ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <span>Menyimpan...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Check className="w-4 h-4" />
+                                                <span>Simpan Pengaturan Webhook</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* Webhook Test Diagnostic Result */}
+                            {webhookTestResult && (
+                                <div className={`p-4 rounded-xl border text-xs transition-all ${
+                                    webhookTestResult.success
+                                        ? 'bg-[#0AB600]/10 border-[#0AB600]/30 text-slate-900 dark:text-[#0AB600]'
+                                        : 'bg-rose-50/80 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/80 text-rose-950 dark:text-rose-200'
+                                }`}>
+                                    <div className="flex items-start gap-3">
+                                        {webhookTestResult.success ? (
+                                            <CheckCircle2 className="w-5 h-5 text-[#0AB600] shrink-0 mt-0.5" />
+                                        ) : (
+                                            <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                                        )}
+                                        <div className="space-y-0.5 flex-1">
+                                            <p className="font-bold text-xs">
+                                                {webhookTestResult.success ? 'Uji Coba Webhook Berhasil' : 'Uji Coba Webhook Gagal'}
+                                            </p>
+                                            <p className="text-[11px] opacity-90">
+                                                {webhookTestResult.message}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

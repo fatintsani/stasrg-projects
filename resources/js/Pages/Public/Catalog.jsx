@@ -230,20 +230,20 @@ function CatalogContent({ projects = [], facets = {}, stats = {}, filters = {} }
                         </div>
 
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
-                            {/* Breadcrumbs & Badge */}
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#0AB600]/10 text-[#0AB600] border border-[#0AB600]/20">
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    <span>{language === 'en' ? 'Public Research & Innovation Explorer' : 'Penjelajah Portofolio & Katalog Riset Terbuka'}</span>
+                            {/* Top Badge & Action Bar */}
+                            <div className="flex items-center justify-between flex-wrap gap-3">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0AB600]/10 border border-[#0AB600]/25 text-[#0AB600] text-xs font-bold">
+                                    <FolderKanban className="w-3.5 h-3.5" />
+                                    <span>{language === 'en' ? 'Public Research Repository' : 'Direktori & Penjelajah Riset'}</span>
                                 </div>
 
                                 <button
                                     type="button"
                                     onClick={handleShareCatalogLink}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs ml-auto"
                                     title="Salin tautan katalog beserta filter aktif"
                                 >
-                                    {copiedShareLink ? <Check className="w-3.5 h-3.5 text-[#0AB600]" /> : <Share2 className="w-3.5 h-3.5" />}
+                                    {copiedShareLink ? <Check className="w-3.5 h-3.5 text-[#0AB600]" /> : <Share2 className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />}
                                     <span>{copiedShareLink ? 'Tautan Tersalin!' : 'Bagikan Filter'}</span>
                                 </button>
                             </div>

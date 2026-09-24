@@ -337,6 +337,13 @@ export default function Index({ projects, categories = [], filters = {} }) {
 
                     <div className="flex items-center gap-2">
                         <Link
+                            href="/projects/annual-digest"
+                            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer shrink-0"
+                        >
+                            <FileText className="w-4 h-4 text-[#0AB600]" />
+                            <span>Katalog Tahunan (PDF)</span>
+                        </Link>
+                        <Link
                             href="/projects/create"
                             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0AB600] hover:bg-[#089600] text-white text-xs sm:text-sm font-semibold shadow-md shadow-black/20 hover:shadow-lg transition-all duration-150 cursor-pointer shrink-0"
                         >

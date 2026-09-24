@@ -57,6 +57,8 @@ export default function AnalyticsIndex({
     devices = { types: {}, platforms: {}, browsers: {} },
     locations = [],
     leaderboards = { most_viewed: [], most_scanned: [], most_downloaded: [] },
+    projects_qr_breakdown = [],
+    day_of_week = [],
     recent_events = [],
     projects_list = [],
     filters = {},
@@ -70,6 +72,8 @@ export default function AnalyticsIndex({
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [activeChartTab, setActiveChartTab] = useState('all'); // 'all', 'scans', 'views', 'downloads'
     const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('most_scanned'); // 'most_scanned', 'most_viewed', 'most_downloaded'
+    const [expoTimingTab, setExpoTimingTab] = useState('hourly'); // 'hourly', 'weekly'
+    const [qrSearch, setQrSearch] = useState('');
     const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -665,19 +669,49 @@ export default function AnalyticsIndex({
                         </div>
                     </div>
 
-                    {/* Expo Dissemination Peak Hours Distribution */}
+                    {/* Expo Dissemination Peak Timing & Day-of-Week Distribution */}
                     <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#121824] border border-zinc-200/80 dark:border-zinc-800 shadow-sm flex flex-col justify-between space-y-4">
-                        <div className="space-y-1.5">
-                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-                                {a.peakHoursTitle || 'Waktu Puncak Scan (24 Jam)'}
-                            </h3>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {a.peakHoursDesc || 'Distribusi jam saat pengunjung expo paling aktif memindai QR code flyer.'}
-                            </p>
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1">
+                                <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">
+                                    {expoTimingTab === 'hourly' ? (a.peakHoursTitle || 'Waktu Puncak Scan (24 Jam)') : 'Tren Scan Berdasarkan Hari'}
+                                </h3>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                    {expoTimingTab === 'hourly'
+                                        ? 'Distribusi jam saat pengunjung expo paling aktif memindai QR code.'
+                                        : 'Aktivitas scan dan kunjungan dari Senin hingga Minggu.'}
+                                </p>
+                            </div>
+
+                            {/* Switcher Hourly vs Weekly */}
+                            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setExpoTimingTab('hourly')}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                        expoTimingTab === 'hourly'
+                                            ? 'bg-white dark:bg-zinc-700 text-[#0AB600] shadow-xs'
+                                            : 'text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300'
+                                    }`}
+                                >
+                                    24 Jam
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setExpoTimingTab('weekly')}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                        expoTimingTab === 'weekly'
+                                            ? 'bg-white dark:bg-zinc-700 text-[#0AB600] shadow-xs'
+                                            : 'text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300'
+                                    }`}
+                                >
+                                    Hari (Sen-Min)
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Busiest Hour Highlight Box */}
-                        {busiestHour && (
+                        {/* Busiest Hour / Day Highlight Box */}
+                        {expoTimingTab === 'hourly' && busiestHour && (
                             <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-[#089600]/10 border border-amber-500/20 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
@@ -695,53 +729,217 @@ export default function AnalyticsIndex({
                             </div>
                         )}
 
-                        {/* 24-Hour Vertical Bar Chart */}
-                        <div className="space-y-2">
-                            <div className="h-36 flex items-end gap-1 pt-4 pb-1">
-                                {hourly.map((h, i) => {
-                                    const heightPercent = maxHourlyValue > 0 ? (h.total / maxHourlyValue) * 100 : 0;
-                                    const isPeak = busiestHour && h.hour === busiestHour.hour;
-                                    return (
-                                        <div
-                                            key={i}
-                                            className="flex-1 h-full flex flex-col justify-end items-center group relative cursor-pointer"
-                                        >
-                                            {/* Bar */}
+                        {/* Hourly Chart Display */}
+                        {expoTimingTab === 'hourly' ? (
+                            <div className="space-y-2">
+                                <div className="h-36 flex items-end gap-1 pt-4 pb-1">
+                                    {hourly.map((h, i) => {
+                                        const heightPercent = maxHourlyValue > 0 ? (h.total / maxHourlyValue) * 100 : 0;
+                                        const isPeak = busiestHour && h.hour === busiestHour.hour;
+                                        return (
                                             <div
-                                                className={`w-full rounded-t transition-all duration-300 ${
-                                                    isPeak
-                                                        ? 'bg-amber-500 shadow-sm shadow-amber-500/50'
-                                                        : h.total > 0
-                                                        ? 'bg-[#0AB600]/70 group-hover:bg-[#0AB600]'
-                                                        : 'bg-zinc-200 dark:bg-zinc-800'
-                                                }`}
-                                                style={{ height: `${Math.max(heightPercent, 4)}%` }}
-                                            />
+                                                key={i}
+                                                className="flex-1 h-full flex flex-col justify-end items-center group relative cursor-pointer"
+                                            >
+                                                <div
+                                                    className={`w-full rounded-t transition-all duration-300 ${
+                                                        isPeak
+                                                            ? 'bg-amber-500 shadow-sm shadow-amber-500/50'
+                                                            : h.total > 0
+                                                            ? 'bg-[#0AB600]/70 group-hover:bg-[#0AB600]'
+                                                            : 'bg-zinc-200 dark:bg-zinc-800'
+                                                    }`}
+                                                    style={{ height: `${Math.max(heightPercent, 4)}%` }}
+                                                />
+                                                <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none p-1.5 rounded-lg bg-zinc-900 text-white text-[10px] font-mono whitespace-nowrap z-30 shadow-lg">
+                                                    {h.label}: {h.scans} scan / {h.views} view
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
 
-                                            {/* Tooltip on bar hover */}
-                                            <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none p-1.5 rounded-lg bg-zinc-900 text-white text-[10px] font-mono whitespace-nowrap z-30 shadow-lg">
-                                                {h.label}: {h.scans} scan / {h.views} view
+                                <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
+                                    <span>00:00</span>
+                                    <span>06:00</span>
+                                    <span>12:00</span>
+                                    <span>18:00</span>
+                                    <span>23:00</span>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Day-of-Week Expo Distribution */
+                            <div className="space-y-2.5 pt-1">
+                                {day_of_week.map((d) => {
+                                    const maxDayTotal = Math.max(...day_of_week.map((item) => item.total || 0), 1);
+                                    const pct = Math.round((d.total / maxDayTotal) * 100);
+                                    return (
+                                        <div key={d.day} className="space-y-1">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="font-semibold text-slate-800 dark:text-zinc-200 w-16">
+                                                    {d.label}
+                                                </span>
+                                                <div className="flex items-center gap-3 text-[11px]">
+                                                    <span className="text-[#0AB600] font-bold">{d.scans} scan</span>
+                                                    <span className="text-zinc-400">•</span>
+                                                    <span className="text-sky-500 font-medium">{d.views} view</span>
+                                                </div>
+                                            </div>
+                                            <div className="w-full h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex">
+                                                <div
+                                                    className="h-full bg-[#0AB600] rounded-full transition-all"
+                                                    style={{ width: `${pct}%` }}
+                                                />
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
-
-                            {/* 24-Hour Axis Labels */}
-                            <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
-                                <span>00:00</span>
-                                <span>06:00</span>
-                                <span>12:00</span>
-                                <span>18:00</span>
-                                <span>23:00</span>
-                            </div>
-                        </div>
+                        )}
 
                         <div className="text-[11px] text-zinc-400 italic bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5">
                             <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            <span><strong>Expo Tip:</strong> Optimalkan kehadiran staf lab dan pembagian merchandise pada jam puncak interaksi pameran di atas.</span>
+                            <span><strong>Expo Tip:</strong> Optimalkan kehadiran tim lab dan pembagian flyer pada jam & hari puncak pameran.</span>
                         </div>
                     </div>
+                </div>
+
+                {/* 5. PERFORMA SCAN QR & KONVERSI PER PROYEK RISET */}
+                <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#121824] border border-zinc-200/80 dark:border-zinc-800 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#0AB600]/10 text-[#0AB600] text-[11px] font-bold uppercase tracking-wider">
+                                <QrCode className="w-3.5 h-3.5" />
+                                Analisis Scan QR Interaktif
+                            </div>
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
+                                Performa Scan QR Berdasarkan Proyek Riset
+                            </h3>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                Pantau volume scan QR code flyer, persentase kontribusi (share), dan rasio konversi per proyek riset.
+                            </p>
+                        </div>
+
+                        {/* Search in projects breakdown */}
+                        <div className="relative w-full sm:w-64">
+                            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={qrSearch}
+                                onChange={(e) => setQrSearch(e.target.value)}
+                                placeholder="Cari proyek riset..."
+                                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-[#0AB600]"
+                            />
+                        </div>
+                    </div>
+
+                    {/* QR Performance Table / Cards */}
+                    {(() => {
+                        const filteredQrList = projects_qr_breakdown.filter((p) => {
+                            if (!qrSearch.trim()) return true;
+                            const q = qrSearch.toLowerCase();
+                            return (
+                                (p.name && p.name.toLowerCase().includes(q)) ||
+                                (p.title && p.title.toLowerCase().includes(q)) ||
+                                (p.category && p.category.toLowerCase().includes(q))
+                            );
+                        });
+
+                        if (!filteredQrList.length) {
+                            return (
+                                <div className="py-8 text-center text-xs text-zinc-500">
+                                    Tidak ada data scan QR proyek yang cocok dengan pencarian.
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div className="space-y-3">
+                                {filteredQrList.map((item, idx) => (
+                                    <div
+                                        key={item.id}
+                                        className="p-4 rounded-2xl bg-zinc-50/70 dark:bg-[#161f30] border border-zinc-200/80 dark:border-zinc-800 hover:border-[#0AB600]/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                                    >
+                                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                            <span className="w-7 h-7 rounded-xl font-bold text-xs bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0">
+                                                {idx + 1}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0AB600]/10 text-[#0AB600]">
+                                                        {item.category || 'General'}
+                                                    </span>
+                                                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                                        {item.name}
+                                                    </h4>
+                                                </div>
+                                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                                                    {item.title || item.name}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Metrics & Share Progress */}
+                                        <div className="flex items-center gap-6 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-zinc-200/60 dark:border-zinc-800/80">
+                                            {/* Progress Share */}
+                                            <div className="w-32 hidden sm:block">
+                                                <div className="flex justify-between text-[11px] font-medium text-zinc-500 mb-1">
+                                                    <span>Share</span>
+                                                    <span className="font-bold text-slate-800 dark:text-zinc-200">{item.share_percent}%</span>
+                                                </div>
+                                                <div className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-[#0AB600] rounded-full"
+                                                        style={{ width: `${Math.min(item.share_percent, 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Scan Count */}
+                                            <div className="text-right">
+                                                <span className="text-base font-black text-[#0AB600]">
+                                                    {item.scans_count}
+                                                </span>
+                                                <span className="block text-[10px] text-zinc-400 font-medium">
+                                                    QR Scans
+                                                </span>
+                                            </div>
+
+                                            {/* Conversion Rate */}
+                                            <div className="text-right">
+                                                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                                                    {item.conversion_rate}%
+                                                </span>
+                                                <span className="block text-[10px] text-zinc-400 font-medium">
+                                                    Konversi
+                                                </span>
+                                            </div>
+
+                                            {/* Growth Badge */}
+                                            <div className="text-right w-16">
+                                                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                                    item.growth >= 0
+                                                        ? 'bg-[#0AB600]/10 text-[#0AB600]'
+                                                        : 'bg-rose-500/10 text-rose-600'
+                                                }`}>
+                                                    {item.growth >= 0 ? '+' : ''}{item.growth}%
+                                                </span>
+                                            </div>
+
+                                            {/* Quick Action Link */}
+                                            <Link
+                                                href={`/projects/${item.id}`}
+                                                className="p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-[#0AB600] transition-colors"
+                                                title="Lihat Detail Proyek"
+                                            >
+                                                <ArrowUpRight className="w-4 h-4" />
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* 5. 3-WAY FEATURED RESEARCH LEADERBOARD */}

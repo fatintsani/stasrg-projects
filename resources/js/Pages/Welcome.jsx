@@ -41,7 +41,7 @@ function LandingContent({ publishedProjects = [], stats = {} }) {
                     <ProjectShowcaseSection projects={publishedProjects} />
 
                     {/* Interactive Public Catalog Feature Section */}
-                    <CatalogFeatureSection stats={stats} />
+                    <CatalogFeatureSection stats={stats} projects={publishedProjects} />
 
                     {/* NARA AI Assistant Introduction Section */}
                     <NaraSection />

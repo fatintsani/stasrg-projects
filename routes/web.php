@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminAiAssistantController;
 use App\Http\Controllers\AdminNotificationController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\Api\PublicApiController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\PasskeyController;
@@ -137,6 +138,12 @@ Route::get('/dokumentasi', function () {
     return Inertia::render('Documentation');
 });
 
+// Public Interactive REST API Documentation
+Route::get('/api-docs', [PublicApiController::class, 'documentation'])->name('api.docs');
+Route::get('/api/docs', [PublicApiController::class, 'documentation']);
+Route::get('/developer/api', [PublicApiController::class, 'documentation']);
+Route::get('/dokumentasi-api', [PublicApiController::class, 'documentation']);
+
 // Public Developer & Research Team Page
 Route::get('/team', function () {
     return Inertia::render('Team');
@@ -191,9 +198,10 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:6,1')
         ->name('register.store');
 
-    // Google OAuth
+    // Google OAuth & SSO Telkom University
     Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+    Route::get('/auth/telu-sso/redirect', [GoogleAuthController::class, 'teluSsoRedirect'])->name('auth.telu-sso.redirect');
 
     // Forgot Password & Mailpit OTP
     Route::get('/forgot-password', [PasswordResetOtpController::class, 'create'])->name('password.request');
@@ -241,7 +249,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
         ->middleware('throttle:40,1')
         ->name('admin.ai-assistant.smart-assist');
 
-    // Project Management
+    // Project Management & Annual Catalog Digest
+    Route::get('/projects/annual-digest', [ProjectController::class, 'annualDigest'])->name('projects.annual-digest');
     Route::resource('projects', ProjectController::class);
     Route::post('/projects/{project}/duplicate', [ProjectController::class, 'duplicate'])->name('projects.duplicate');
     Route::get('/projects/{project}/versions', [ModelVersionController::class, 'projectVersions'])->name('projects.versions.index');
@@ -316,6 +325,10 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/settings/ai/test', [SettingsController::class, 'testAiConnection'])
         ->middleware('throttle:10,1')
         ->name('settings.ai.test');
+    Route::post('/settings/webhook', [SettingsController::class, 'updateWebhookSettings'])->name('settings.webhook.update');
+    Route::post('/settings/webhook/test', [SettingsController::class, 'testWebhook'])
+        ->middleware('throttle:10,1')
+        ->name('settings.webhook.test');
     Route::post('/settings/maintenance/toggle', [SettingsController::class, 'toggleMaintenance'])->name('settings.maintenance.toggle');
     Route::post('/settings/maintenance/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.maintenance.clear-cache');
     Route::post('/settings/maintenance/optimize', [SettingsController::class, 'optimizeSystem'])->name('settings.maintenance.optimize');

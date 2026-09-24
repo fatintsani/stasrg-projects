@@ -8,6 +8,7 @@ use App\Models\SystemSetting;
 use App\Services\ActivityLogger;
 use App\Services\AiAssistantService;
 use App\Services\BackupService;
+use App\Services\WebhookNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,6 +53,18 @@ class SettingsController extends Controller
             'custom_endpoint' => SystemSetting::get('ai_custom_endpoint', ''),
         ];
 
+        // Webhook Notifier configuration (Discord / Telegram / Generic)
+        $savedTelegramBotToken = SystemSetting::getSecret('webhook_telegram_bot_token');
+        $webhookSettings = [
+            'enabled' => (bool) SystemSetting::get('webhook_enabled', false),
+            'type' => SystemSetting::get('webhook_type', 'discord'),
+            'url' => SystemSetting::get('webhook_url', ''),
+            'has_telegram_bot_token' => ! empty($savedTelegramBotToken),
+            'masked_telegram_bot_token' => SystemSetting::maskSecret($savedTelegramBotToken),
+            'telegram_chat_id' => SystemSetting::get('webhook_telegram_chat_id', ''),
+            'events' => SystemSetting::get('webhook_events', ['ticket_created', 'user_registered', 'ticket_replied']) ?: ['ticket_created', 'user_registered', 'ticket_replied'],
+        ];
+
         // System information and maintenance diagnostics
         $systemInfo = [
             'is_maintenance_mode' => app()->isDownForMaintenance(),
@@ -83,10 +96,89 @@ class SettingsController extends Controller
             'passkeys' => $passkeys,
             'projectStats' => $projectStats,
             'aiSettings' => $aiSettings,
+            'webhookSettings' => $webhookSettings,
             'systemInfo' => $systemInfo,
             'backupSummary' => $backupSummary,
             'appFont' => SystemSetting::get('app_font', 'plus-jakarta-sans'),
         ]);
+    }
+
+    /**
+     * Update external webhook notification settings.
+     */
+    public function updateWebhookSettings(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'type' => ['required', 'string', 'in:discord,telegram,generic'],
+            'url' => ['nullable', 'string', 'max:500'],
+            'telegram_bot_token' => ['nullable', 'string', 'max:255'],
+            'telegram_chat_id' => ['nullable', 'string', 'max:100'],
+            'events' => ['nullable', 'array'],
+            'events.*' => ['string', 'in:ticket_created,user_registered,ticket_replied'],
+        ]);
+
+        SystemSetting::set('webhook_enabled', $validated['enabled'], 'boolean');
+        SystemSetting::set('webhook_type', $validated['type']);
+        SystemSetting::set('webhook_events', $validated['events'] ?? ['ticket_created', 'user_registered', 'ticket_replied'], 'json');
+
+        if (array_key_exists('url', $validated)) {
+            SystemSetting::set('webhook_url', trim((string) $validated['url']));
+        }
+
+        if (! empty($validated['telegram_bot_token'])) {
+            SystemSetting::setSecret('webhook_telegram_bot_token', trim($validated['telegram_bot_token']));
+        }
+
+        if (array_key_exists('telegram_chat_id', $validated)) {
+            SystemSetting::set('webhook_telegram_chat_id', trim((string) $validated['telegram_chat_id']));
+        }
+
+        ActivityLogger::logSystem(
+            action: 'settings.webhook_updated',
+            description: "Memperbarui preferensi integrasi Webhook ({$validated['type']})",
+            properties: [
+                'enabled' => $validated['enabled'],
+                'type' => $validated['type'],
+                'events' => $validated['events'] ?? [],
+            ],
+            user: $request->user(),
+            request: $request
+        );
+
+        return back()->with('success', 'Pengaturan notifikasi Webhook berhasil disimpan!')->with('message', 'Pengaturan notifikasi Webhook berhasil disimpan!');
+    }
+
+    /**
+     * Test webhook dispatch and return diagnostic latency.
+     */
+    public function testWebhook(Request $request): JsonResponse
+    {
+        $type = $request->input('type', 'discord');
+        $url = $request->input('url') ?: SystemSetting::get('webhook_url');
+        $botToken = $request->input('telegram_bot_token') ?: SystemSetting::getSecret('webhook_telegram_bot_token');
+        $chatId = $request->input('telegram_chat_id') ?: SystemSetting::get('webhook_telegram_chat_id');
+
+        $result = WebhookNotifier::testConnection(
+            type: $type,
+            url: $url,
+            telegramBotToken: $botToken,
+            telegramChatId: $chatId
+        );
+
+        ActivityLogger::logSystem(
+            action: 'system.webhook_tested',
+            description: $result['success']
+                ? "Uji coba Webhook ({$type}) berhasil dikirim ({$result['latency_ms']} ms)"
+                : "Uji coba Webhook ({$type}) gagal dikirim",
+            properties: $result,
+            user: $request->user(),
+            request: $request
+        );
+
+        $status = $result['success'] ? 200 : 422;
+
+        return response()->json($result, $status);
     }
 
     /**
